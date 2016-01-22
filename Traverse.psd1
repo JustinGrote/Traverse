@@ -63,7 +63,7 @@ PowerShellVersion = '3.0'
 # FormatsToProcess = @()
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = @("Traverse-Helper")
+#NestedModules = @("")
 
 # Functions to export from this module
 FunctionsToExport = '*'
