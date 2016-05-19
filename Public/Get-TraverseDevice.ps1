@@ -1,11 +1,14 @@
 function Get-TraverseDevice {
 <#
 .SYNOPSIS
-Gets all listed Traverse devices.
+Retrieves Traverse Devices based on specified criteria.
 
+.DESCRIPTION
+This command leverages the Traverse APIs to gather information about devices in Traverse. 
+It retrieves all devices visible to the user by default if no parameters are specified.
 
 .PARAMETER Filter
-A Standard Regular Expression filter to search for devices in the environment.
+A Standard Regular Expression filter to search for devices in the environment. Using this option will retrieve objects via the Web Services API instead of REST.
 
 The format follows the Traverse Search Parameters format and searches the same properties by default:
 http://help.kaseya.com/webhelp/EN/TV/9020000/#17437.htm
@@ -13,6 +16,18 @@ http://help.kaseya.com/webhelp/EN/TV/9020000/#17437.htm
 Note that if using properties (e.g. 'department:test host') then the search is a logical AND search, as opposed to the default OR
 
 See the Examples section for more information.
+
+.EXAMPLE
+Get-TraverseDevice "host1"
+Get devices where name is exactly "host1"
+
+.EXAMPLE
+Get-TraverseDevice -DeviceName "host1*"
+Get devices where name starts with "host1"
+
+.EXAMPLE
+Get-TraverseDevice -DeviceName "host[1-7]"
+Use a regex to get devices named host1 through host7 (but not host8 or host9)
 
 .EXAMPLE
 Get-TraverseDevice -filter "host1"
@@ -25,7 +40,6 @@ Get devices with an IP address (or name) of 10.1.2.5
 .EXAMPLE
 Get-TraverseDevice -filter "^host1"
 Get devices where name begins with host1 (would match: host1, host1test)
-
 
 .EXAMPLE
 Get-TraverseDevice -filter "department:Finance"
@@ -41,34 +55,77 @@ Get devices that have at least one test defined with SQL in the name
 
 #>
 
-param (
-    [string]$Filter
-) # Param
+    [CmdletBinding(DefaultParameterSetName="REST")]
 
-#Exit if not connected
-if (!$Global:TraverseSession) {write-warning "You are not connected to a Traverse BVE system. Use Connect-TraverseBVE first";return}
+    param (
+        #Name of the device you want to retrieve. Regular expressions are supported.
+        [Parameter(Position=0,ParameterSetName="REST")][String]$DeviceName = '*',
+        #[SUPERUSER ONLY] Restrict scope of search to what the specified user can see
+        [Parameter(ParameterSetName="REST")][String]$UserName = '',
+        [Parameter(ParameterSetName="WS")][String]$Filter
+    ) # Param
 
-#Connect to the Device Web Service
-$TraverseBVEDeviceWS = (new-webserviceproxy -uri "https://$($TraverseHostname)/api/soap/device?wsdl" -ErrorAction stop)
-$TraverseBVEDeviceNS = $TraverseBVEDeviceWS.gettype().namespace
+    if ($PSCmdlet.ParameterSetName -eq "REST") {
+        $FlexAPIPath = '/api/rest/command/'
+        $FlexCommand = 'device.list'
 
-#Create device request
-$DeviceRequest = new-object ($TraverseBVEDeviceNS + '.deviceStatusesRequest')
-$DeviceRequest.sessionid = $TraverseSession.result.sessionid
+        #Exit if not connected
+        if (!$Global:TraverseSessionREST) {throw 'You are not connected to a Traverse BVE system. Use Connect-TraverseBVE first';return}
 
-#If Filter is specified, add a freeform search criteria object
-if ($Filter) {
-    $SearchCriteria = new-object ($TraverseBVEDeviceNS + '.searchCriteria')
-    $SearchCriteria.searchOption = "FREEFORM"
-    $SearchCriteria.searchOptionSpecified = $true
-    $SearchCriteria.searchTerms = $Filter
-    $DeviceRequest.searchCriterias += $SearchCriteria
-}
+        $RESTCommand = @{
+            URI = 'https://' + $TraverseHostname + $FlexAPIPath + $FlexCommand + "?format=json&devicename=$deviceName"
+            WebSession = $TraverseSessionREST
+            Method = 'GET'
+            ContentType = 'application/json'
+        }
 
-$DeviceResult = $TraverseBVEDeviceWS.getStatuses($DeviceRequest)
+        $deviceResult = Invoke-RestMethod @RESTCommand
 
-if (!$DeviceResult.success) {throw "The connection failed to $TraverseHostname. Reason: Error $($DeviceResult.errorcode) $($DeviceResult.errormessage)"}
-if ($DeviceResult.errorCodeSpecified) {write-warning "Get-TraverseDevice Search Error: $($DeviceResult.errorMessage)"}
+        #BUGFIX: Work around a bug in ConvertFrom-JSON where it doesn't parse blank entries even if it is valid JSON. Example: {""=""}
+        $nullJSONRegex = [Regex]::Escape(',{"":""}')
+        if ($deviceResult -is [String] -and $deviceResult -match $nullJSONRegex) {
+            $deviceResult = ConvertFrom-JSON ($deviceResult -replace $nullJSONRegex,'')
+        }
 
-return $DeviceResult.result.devices
+        if ($deviceresult.'api-response'.status.error -eq 'false') {
+            write-verbose ('Get-TraverseDevice Successful: ' + $deviceresult.'api-response'.status.code + ' ' + $deviceresult.'api-response'.status.message)
+            return $deviceresult.'api-response'.data.object
+        }
+
+        else {
+            write-error ('Error getting devices. ' + $deviceresult.'api-response'.status.code + ' ' + $deviceresult.'api-response'.status.message)
+        }
+    } #IF ParameterSet REST
+
+    if ($PSCmdlet.ParameterSetName -eq "WS") {
+
+        #Exit if not connected
+        if (!$Global:TraverseSession) {write-warning "You are not connected to a Traverse BVE system. Use Connect-TraverseBVE first";return}
+
+        #Connect to the Device Web Service
+        $TraverseBVEDeviceWS = (new-webserviceproxy -uri "https://$($TraverseHostname)/api/soap/device?wsdl" -ErrorAction stop)
+        $TraverseBVEDeviceNS = $TraverseBVEDeviceWS.gettype().namespace
+
+        #Create device request
+        $DeviceRequest = new-object ($TraverseBVEDeviceNS + '.deviceStatusesRequest')
+        $DeviceRequest.sessionid = $TraverseSession.result.sessionid
+
+        #If Filter is specified, add a freeform search criteria object
+        if ($Filter) {
+            $SearchCriteria = new-object ($TraverseBVEDeviceNS + '.searchCriteria')
+            $SearchCriteria.searchOption = "FREEFORM"
+            $SearchCriteria.searchOptionSpecified = $true
+            $SearchCriteria.searchTerms = $Filter
+            $DeviceRequest.searchCriterias += $SearchCriteria
+        }
+
+        $DeviceResult = $TraverseBVEDeviceWS.getStatuses($DeviceRequest)
+
+        if (!$DeviceResult.success) {throw "The connection failed to $TraverseHostname. Reason: Error $($DeviceResult.errorcode) $($DeviceResult.errormessage)"}
+        if ($DeviceResult.errorCodeSpecified) {write-warning "Get-TraverseDevice Search Error: $($DeviceResult.errorMessage)"}
+
+        return $DeviceResult.result.devices
+
+    } #If ParameterSetName WS
+
 } #Get-TraverseDevice

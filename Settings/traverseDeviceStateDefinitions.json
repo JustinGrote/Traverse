@@ -1,0 +1,8 @@
+{
+    "128":  "Suspended",
+    "2048":  "OK",
+    "32768":  "TestUnknown",
+    "524288":  "TestUnreachable",
+    "8388608":  "TestWarning",
+    "134217728":  "TestCriticalOrDeviceOffline"
+}
