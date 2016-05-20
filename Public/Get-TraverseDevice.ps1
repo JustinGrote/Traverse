@@ -77,7 +77,8 @@ Get devices that have at least one test defined with SQL in the name
         $argumentList.deviceName = $DeviceName
         if ($Username) {$argumentList.userName = $UserName}
 
-    } #IF ParameterSet REST
+        (Invoke-TraverseCommand device.list $argumentList -Verbose:($PSBoundParameters['Verbose'] -eq $true)).data.object
+    } #If ParameterSet REST
 
     if ($PSCmdlet.ParameterSetName -eq "WS") {
 
