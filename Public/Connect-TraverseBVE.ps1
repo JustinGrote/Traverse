@@ -91,10 +91,10 @@ if (!$NoJSON) {
         password=$Credential.GetNetworkCredential().Password
     }
 
-    $JSONLoginResult = Invoke-RestMethod -Method POST -Uri $JSONCommandURI -Body (ConvertTo-Json -compress $JSONBody) -ContentType 'application/json' -verbose
-    if ($JSONLoginResult.succes -notmatch "True") {throw "The connection failed to $Hostname. Reason: " + $JSONLoginResult.errorCode + ": " + $JSONLoginResult.errorMessage}
+    $JSONLoginResult = Invoke-RestMethod -Method POST -Uri $JSONCommandURI -Body (ConvertTo-Json -compress $JSONBody) -ContentType 'application/json' -SessionVariable TraverseSessionJSON
+    if ($JSONLoginResult.success -notmatch "True") {throw "The connection failed to $Hostname. Reason: " + $JSONLoginResult.errorCode + ": " + $JSONLoginResult.errorMessage}
+    $Global:TraverseSessionJSON = $TraverseSessionJSON
     
-    $Global:TraverseSessionJSON = $JSONLoginResult
     
     write-host -foreground green "Connected to $Hostname BVE as $($Credential.GetNetworkCredential().Username) using JSON API"
 
