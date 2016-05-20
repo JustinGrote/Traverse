@@ -29,7 +29,7 @@ Foreach($FunctionToImport in @($PublicFunctions + $PrivateFunctions))
 #Import Settings files as global objects based on their filename
 foreach ($ModuleSettingsItem in $ModuleSettings) 
 {
-    New-Variable -Name "$($ModuleSettingsItem.basename)" -Scope Global -Value (convertfrom-json (Get-Content -raw $ModuleSettingsItem.fullname))
+    New-Variable -Name "$($ModuleSettingsItem.basename)" -Scope Global -Value (convertfrom-json (Get-Content -raw $ModuleSettingsItem.fullname)) -Force
 }
 
 #Export the public functions. This should also be done in the manifest

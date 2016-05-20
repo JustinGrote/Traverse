@@ -31,6 +31,8 @@ param (
     [PSCredential]$Credential = (get-credential -message "Enter your Traverse Username and Password"),
     [Switch]$Force,
     [Switch]$NoREST,
+    #Skip the connection to the JSON API
+    [Switch]$NoJSON,
     [Switch]$NoLegacyWS,
     [Switch]$RESTSessionPassThru,
     [Switch]$WSSessionPassThru
@@ -56,7 +58,7 @@ set-variable -name TraverseSession -value $loginresult -scope Global
 set-variable -name TraverseHostname -value $hostname -scope Global
 write-host -foreground green "Connected to $hostname BVE as $($loginrequest.username) using Web Services API"
 #Return the session if switch is set
-if ($WSSessionPassTHru) {$LoginResult}
+if ($WSSessionPassThru) {$LoginResult}
 
 #Create a REST Session
 if (!$NoREST) {
@@ -72,6 +74,32 @@ if (!$NoREST) {
     #Return The session if switch is set
     if ($RESTSessionPassThru) {$TraverseSessionREST}
 }
+
+#Create a JSON Session
+if (!$NoJSON) {
+    #Check for existing session
+    if ($Global:TraverseSessionJSON -and !$force) {write-warning "You are already logged into Traverse (JSON). Use the -force parrameter if you want to connect to a different one or use a different username";return}
+
+
+    #Log in using Credentials
+    $JSONAPIPath = '/api/json/'
+    $JSONCommandName = 'login/login'
+    $JSONCommandURI = 'https://' + $Hostname + $JSONAPIPath + $JSONCommandName
+
+    $JSONBody = @{
+        username=$Credential.GetNetworkCredential().UserName
+        password=$Credential.GetNetworkCredential().Password
+    }
+
+    $JSONLoginResult = Invoke-RestMethod -Method POST -Uri $JSONCommandURI -Body (ConvertTo-Json -compress $JSONBody) -ContentType 'application/json' -verbose
+    if ($JSONLoginResult.succes -notmatch "True") {throw "The connection failed to $Hostname. Reason: " + $JSONLoginResult.errorCode + ": " + $JSONLoginResult.errorMessage}
+    
+    $Global:TraverseSessionJSON = $JSONLoginResult
+    
+    write-host -foreground green "Connected to $Hostname BVE as $($Credential.GetNetworkCredential().Username) using JSON API"
+
+}
+
 
 #Create a Legacy WS Session
 if (!$NoLegacyWS) {
