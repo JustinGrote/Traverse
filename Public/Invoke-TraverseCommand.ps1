@@ -3,8 +3,22 @@ function Invoke-TraverseCommand {
 .SYNOPSIS
 Executes a command using either the Traverse JSON or REST Interfaces
 
+.DESCRIPTION
+This cmdlet executes a Traverse API command and formats the result as a Powershell Custom Object
+This cmdlet mostly serves as a wrapper around the APIs to make them easier to use.
+Most of the commands in the Traverse module use this command as the foundation to execute their actions
+
 .NOTES
 Modeled after Native Powershell functions Invoke-Command and Invoke-Expression.
+
+.EXAMPLE
+(Invoke-TraverseCommand 'device.list').data.object
+Run the device.list command, and show only the resulting object output
+
+.EXAMPLE
+(Invoke-TraverseCommand 'device.list').data.object
+Run the device.list command, and show only the resulting object output
+
 
 #>
 
@@ -26,7 +40,7 @@ Modeled after Native Powershell functions Invoke-Command and Invoke-Expression.
     switch ($API) {
         'REST' { 
             $APIPath = '/api/rest/command/' 
-            $Method = "GET"
+            $Method = 'GET'
             $WebSession = $Global:TraverseSessionREST
             
             if ($ArgumentList -ne $null -and $ArgumentList -isnot [System.Collections.Hashtable]) {throw 'ArgumentList must be specified as a hashtable for REST commands'}
@@ -36,7 +50,7 @@ Modeled after Native Powershell functions Invoke-Command and Invoke-Expression.
         }
         'JSON' { 
             $APIPath = '/api/json/' 
-            $Method = "POST"
+            $Method = 'POST'
             $WebSession = $Global:TraverseSessionJSON
             if (!$Global:TraverseSessionJSON) {throw 'You are not connected to a Traverse BVE system with JSON. Use Connect-TraverseBVE first'}
         }
@@ -50,6 +64,7 @@ Modeled after Native Powershell functions Invoke-Command and Invoke-Expression.
         ContentType = 'application/json'
     }
 
+    if (!($PSCmdlet.ShouldProcess($RESTCommand.URI,"Invoke $API Command"))) {return}
     $commandResult = Invoke-RestMethod @RESTCommand
 
     #BUGFIX: Work around a bug in ConvertFrom-JSON where it doesn't parse blank entries even if it is valid JSON. Example: {""=""}
@@ -61,11 +76,13 @@ Modeled after Native Powershell functions Invoke-Command and Invoke-Expression.
 
     if ($commandresult.'api-response'.status.error -eq 'false') {
         write-verbose ('Invoke-TraverseCommand Successful: ' + $commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
-        return $commandResult.'api-response'.data.object
+        return $commandResult.'api-response'
     }
 
     else {
         write-error ('Error getting devices. ' + $commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
     }
+
+
 
 } #Connect-TraverseBVE

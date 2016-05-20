@@ -2,39 +2,26 @@ function Connect-TraverseBVE {
 <#
 .SYNOPSIS
  Connects to a Traverse BVE system with the Web Services API enabled.
-
-.PARAMETER Hostname
-The DNS name or IP address of the Traverse BVE system
-
-.PARAMETER Credential
-The username and password needed to access the system in secure PSCredential format.
-
-.PARAMETER Force
-Create a new session even if one already exists
-
-.PARAMETER NoREST
-Skips the connection to the REST API
-
-.PARAMETER NoLegacyWS
-Skips the connection to the legacy Web Services API
-
-.PARAMETER RESTSessionPassThru
-Pass the REST session object to the pipeline. Useful if you want to work with multiple sessions simultaneously
-
-.PARAMETER WSSessionPassThru
-Pass the SOAP session object to the pipeline. Useful if you want to work with multiple sessions simultaneously
-
 #>
 
 param (
+    #The DNS name or IP address of the Traverse BVE system
     [Parameter(Mandatory=$true)][String]$Hostname,
+    #The username and password needed to access the system in secure PSCredential format.
     [PSCredential]$Credential = (get-credential -message "Enter your Traverse Username and Password"),
+    #Create a new session even if one already exists
     [Switch]$Force,
+    #Skips the connection to the REST API
     [Switch]$NoREST,
     #Skip the connection to the JSON API
     [Switch]$NoJSON,
+    #Skips the connection to the legacy Web Services API
     [Switch]$NoLegacyWS,
+    #Pass the REST session object to the pipeline. Useful if you want to work with multiple sessions simultaneously
     [Switch]$RESTSessionPassThru,
+    #Pass the JSON session object to the pipeline. Useful if you want to work with multiple sessions simultaneously
+    [Switch]$JSONSessionPassThru,
+    #Pass the SOAP session object to the pipeline. Useful if you want to work with multiple sessions simultaneously
     [Switch]$WSSessionPassThru
 ) # Param
 
