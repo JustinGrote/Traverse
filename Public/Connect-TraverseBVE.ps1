@@ -15,6 +15,8 @@ param (
     [Switch]$NoREST,
     #Skip the connection to the JSON API
     [Switch]$NoJSON,
+    #Skip the connection to the Web Services API
+    [Switch]$NoWS,
     #Skips the connection to the legacy Web Services API
     [Switch]$NoLegacyWS,
     #Pass the REST session object to the pipeline. Useful if you want to work with multiple sessions simultaneously
@@ -25,27 +27,6 @@ param (
     [Switch]$WSSessionPassThru
 ) # Param
 
-if (!$Hostname) {write-warning "You are already logged into Traverse. Use the -force parameter if you want to connect to a different one or use a different username";return} 
-if ($Global:TraverseSession -and !$force) {write-warning "You are already logged into Traverse. Use the -force parameter if you want to connect to a different one or use a different username";return} 
-
-#Workaround for bug with new-webserviceproxy (http://www.sqlmusings.com/2012/02/04/resolving-ssrs-and-powershell-new-webserviceproxy-namespace-issue/)
-$TraverseBVELoginWS = (new-webserviceproxy -uri "https://$($hostname)/api/soap/login?wsdl" -ErrorAction stop)
-$TraverseBVELoginNS = $TraverseBVELoginWS.gettype().namespace
-
-#Create the login request and unpack the password from the encrypted credentials
-$loginRequest = new-object ($TraverseBVELoginNS + '.loginRequest')
-$loginRequest.username = $credential.GetNetworkCredential().Username
-$loginRequest.password = $credential.GetNetworkCredential().Password
-
-$loginResult = $TraverseBVELoginWS.login($loginRequest)
-
-if (!$loginResult.success) {throw "The connection failed to $Hostname. Reason: Error $($loginresult.errorcode) $($loginresult.errormessage)"}
-
-set-variable -name TraverseSession -value $loginresult -scope Global
-set-variable -name TraverseHostname -value $hostname -scope Global
-write-host -foreground green "Connected to $hostname BVE as $($loginrequest.username) using Web Services API"
-#Return the session if switch is set
-if ($WSSessionPassThru) {$LoginResult}
 
 #Create a REST Session
 if (!$NoREST) {
@@ -87,6 +68,29 @@ if (!$NoJSON) {
 
 }
 
+#Create Web Services (SOAP) connection
+if (!$NoWS) {
+    if ($Global:TraverseSession -and !$force) {write-warning "You are already logged into Traverse (WS). Use the -force parameter if you want to connect to a different one or use a different username";return} 
+
+    #Workaround for bug with new-webserviceproxy (http://www.sqlmusings.com/2012/02/04/resolving-ssrs-and-powershell-new-webserviceproxy-namespace-issue/)
+    $TraverseBVELoginWS = (new-webserviceproxy -uri "https://$($hostname)/api/soap/login?wsdl" -ErrorAction stop)
+    $TraverseBVELoginNS = $TraverseBVELoginWS.gettype().namespace
+
+    #Create the login request and unpack the password from the encrypted credentials
+    $loginRequest = new-object ($TraverseBVELoginNS + '.loginRequest')
+    $loginRequest.username = $credential.GetNetworkCredential().Username
+    $loginRequest.password = $credential.GetNetworkCredential().Password
+
+    $loginResult = $TraverseBVELoginWS.login($loginRequest)
+
+    if (!$loginResult.success) {throw "The connection failed to $Hostname. Reason: Error $($loginresult.errorcode) $($loginresult.errormessage)"}
+
+    set-variable -name TraverseSession -value $loginresult -scope Global
+    set-variable -name TraverseHostname -value $hostname -scope Global
+    write-host -foreground green "Connected to $hostname BVE as $($loginrequest.username) using Web Services API"
+    #Return the session if switch is set
+    if ($WSSessionPassThru) {$LoginResult}
+} #If !$NoWS
 
 #Create a Legacy WS Session
 if (!$NoLegacyWS) {
