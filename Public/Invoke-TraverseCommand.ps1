@@ -41,18 +41,21 @@ Run the device.list command, and show only the resulting object output
         'REST' { 
             $APIPath = '/api/rest/command/' 
             $Method = 'GET'
-            $WebSession = $Global:TraverseSessionREST
+            
             
             if ($ArgumentList -ne $null -and $ArgumentList -isnot [System.Collections.Hashtable]) {throw 'ArgumentList must be specified as a hashtable for REST commands'}
             $ArgumentList.format = "json"
 
             if (!$Global:TraverseSessionREST) {throw 'You are not connected to a Traverse BVE system with REST. Use Connect-TraverseBVE first'}
+            $WebSession = $Global:TraverseSessionREST
         }
         'JSON' { 
             $APIPath = '/api/json/' 
             $Method = 'POST'
-            $WebSession = $Global:TraverseSessionJSON
+            $ArgumentList = ConvertTo-Json -Compress $ArgumentList
+
             if (!$Global:TraverseSessionJSON) {throw 'You are not connected to a Traverse BVE system with JSON. Use Connect-TraverseBVE first'}
+            $WebSession = $Global:TraverseSessionJSON
         }
     }
 
@@ -74,15 +77,32 @@ Run the device.list command, and show only the resulting object output
         $commandResult = ConvertFrom-JSON ($commandResult -replace $nullJSONRegex,'')
     }
 
-    if ($commandresult.'api-response'.status.error -eq 'false') {
-        write-verbose ('Invoke-TraverseCommand Successful: ' + $commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
-        return $commandResult.'api-response'
-    }
 
-    else {
-        write-error ('Error getting devices. ' + $commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
-    }
+    #Error Checking and results return are API-dependent
+    switch ($API) {
+        "REST" {
 
+            if ($commandresult.'api-response'.status.error -eq 'false') {
+                write-verbose ('Invoke-TraverseCommand Successful: ' + $commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
+                return $commandResult.'api-response'
+            }
+
+            else {
+                write-error ('Invoke-TraverseCommand ERROR: ' + $commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
+            }
+        } #REST
+
+        "JSON" {
+            if ($commandResult.success) {
+                write-verbose ('Invoke-TraverseCommand Successful: ' + $commandResult.errorcode + ' ' + $commandResult.errormessage)
+                return $commandResult.result
+            }
+            else {
+                write-error ('Invoke-TraverseCommand ERROR: ' + $commandResult.errorcode + ' ' + $commandResult.errormessage)
+            }
+
+        } #JSON
+    } #Switch
 
 
 } #Connect-TraverseBVE
