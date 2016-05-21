@@ -12,7 +12,7 @@
 RootModule = 'Traverse.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.4.2'
+ModuleVersion = '0.5'
 
 # ID used to uniquely identify this module
 GUID = 'd3949a34-7ac5-4100-ba7d-a11da31a05aa'
@@ -24,7 +24,7 @@ Author = "Justin Grote"
 # CompanyName = 'Unspecified'
 
 # Copyright statement for this module
-Copyright = '(c) 2015 Justin Grote. All rights reserved.'
+Copyright = 'MIT License. (c) 2016 Justin Grote. All rights reserved.'
 
 # Description of the functionality provided by this module
 Description = '*UNOFFICIAL* Kaseya Traverse Management. ONLY TESTED ON TRAVERSE 7.X'
