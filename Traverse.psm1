@@ -7,15 +7,18 @@ foreach ($NetAssembly in $NetAssemblies) {
 }
 
 #Get public and private function definition files.
-$Public  = @( Get-ChildItem -Path $PSScriptRoot\Public\*.ps1 -ErrorAction SilentlyContinue )
-$Private = @( Get-ChildItem -Path $PSScriptRoot\Private\*.ps1 -ErrorAction SilentlyContinue )
+$PublicFunctions  = @( Get-ChildItem -Path $PSScriptRoot\Public\*.ps1 -ErrorAction SilentlyContinue )
+$PrivateFunctions = @( Get-ChildItem -Path $PSScriptRoot\Private\*.ps1 -ErrorAction SilentlyContinue )
+
+#Get JSON settings files
+$ModuleSettings = @( Get-ChildItem -Path $PSScriptRoot\Settings\*.json -ErrorAction SilentlyContinue )
 
 #Dot source the files
-Foreach($import in @($Public + $Private))
+Foreach($FunctionToImport in @($PublicFunctions + $PrivateFunctions))
 {
     Try
     {
-        . $import.fullname
+        . $FunctionToImport.fullname
     }
     Catch
     {
@@ -23,5 +26,11 @@ Foreach($import in @($Public + $Private))
     }
 }
 
+#Import Settings files as global objects based on their filename
+foreach ($ModuleSettingsItem in $ModuleSettings) 
+{
+    New-Variable -Name "$($ModuleSettingsItem.basename)" -Scope Global -Value (convertfrom-json (Get-Content -raw $ModuleSettingsItem.fullname)) -Force
+}
+
 #Export the public functions. This should also be done in the manifest
-Export-ModuleMember -Function $Public.Basename
+Export-ModuleMember -Function $PublicFunctions.Basename
