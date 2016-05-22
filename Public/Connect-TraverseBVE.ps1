@@ -11,6 +11,8 @@ param (
     [PSCredential]$Credential = (get-credential -message "Enter your Traverse Username and Password"),
     #Create a new session even if one already exists
     [Switch]$Force,
+    #Do not show connection success information
+    [Switch]$Quiet,
     #Skips the connection to the REST API
     [Switch]$NoREST,
     #Skip the connection to the JSON API
@@ -38,16 +40,21 @@ if (!$NoREST) {
     $RESTLoginResult = Invoke-RestMethod -sessionvariable TraverseSessionREST -Uri $RESTLoginURI
     if ($RESTLoginResult -notmatch "OK") {throw "The connection failed to $Hostname. Reason: $RESTLoginResult"}
     $Global:TraverseSessionREST = $TraverseSessionREST
-    write-host -foreground green "Connected to $Hostname BVE as $($Credential.GetNetworkCredential().Username) using REST API"
+    if (!$Quiet) {
+        write-host -foreground green "Connected to $Hostname BVE as $($Credential.GetNetworkCredential().Username) using REST API"
+    }
+
     #Return The session if switch is set
     if ($RESTSessionPassThru) {$TraverseSessionREST}
-}
+
+    $GLOBAL:TraverseLastCommandTimeREST = [DateTime]::Now
+
+} #if !$NoREST
 
 #Create a JSON Session
 if (!$NoJSON) {
     #Check for existing session
     if ($Global:TraverseSessionJSON -and !$force) {write-warning "You are already logged into Traverse (JSON). Use the -force parrameter if you want to connect to a different one or use a different username";return}
-
 
     #Log in using Credentials
     $JSONAPIPath = '/api/json/'
@@ -63,10 +70,12 @@ if (!$NoJSON) {
     if ($JSONLoginResult.success -notmatch "True") {throw "The connection failed to $Hostname. Reason: " + $JSONLoginResult.errorCode + ": " + $JSONLoginResult.errorMessage}
     $Global:TraverseSessionJSON = $TraverseSessionJSON
     
-    
-    write-host -foreground green "Connected to $Hostname BVE as $($Credential.GetNetworkCredential().Username) using JSON API"
+    if (!$Quiet) {
+        write-host -foreground green "Connected to $Hostname BVE as $($Credential.GetNetworkCredential().Username) using JSON API"
+    }
+    $GLOBAL:TraverseLastCommandTimeJSON = [DateTime]::Now
 
-}
+} # if !$NoJSON
 
 #Create Web Services (SOAP) connection
 if (!$NoWS) {
@@ -87,7 +96,10 @@ if (!$NoWS) {
 
     set-variable -name TraverseSession -value $loginresult -scope Global
     set-variable -name TraverseHostname -value $hostname -scope Global
-    write-host -foreground green "Connected to $hostname BVE as $($loginrequest.username) using Web Services API"
+    if (!$Quiet) {
+        write-host -foreground green "Connected to $hostname BVE as $($loginrequest.username) using Web Services API"
+    }
+
     #Return the session if switch is set
     if ($WSSessionPassThru) {$LoginResult}
 } #If !$NoWS
@@ -115,9 +127,11 @@ if (!$NoLegacyWS) {
     write-host "Connected to $hostname BVE as $($loginrequest.username) using SOAP API"
     #Return The session if switch is set
     if ($WSSessionPassThru) {$LoginResult}
-    #>
+    
     
     set-variable -scope Global -name "TraverseLegacyCredential" -value $credential
+
+    #>
 }
 
 } #Connect-TraverseBVE
