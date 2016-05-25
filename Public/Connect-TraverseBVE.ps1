@@ -33,7 +33,7 @@ param (
 #Create a REST Session
 if (!$NoREST) {
     #Check for existing session
-    if ($Global:TraverseSessionREST -and !$force) {write-warning "You are already logged into Traverse (REST). Use the -force parrameter if you want to connect to a different one or use a different username";return}
+    if ($Global:TraverseSessionREST -and !$force) {write-warning "You are already logged into Traverse (REST). Use the -force parameter if you want to connect to a different one or use a different username";return}
 
     #Log in using Credentials
     $RESTLoginURI = "https://$Hostname/api/rest/command/login?" + $Credential.GetNetworkCredential().UserName + "/" + $Credential.GetNetworkCredential().Password
@@ -54,7 +54,7 @@ if (!$NoREST) {
 #Create a JSON Session
 if (!$NoJSON) {
     #Check for existing session
-    if ($Global:TraverseSessionJSON -and !$force) {write-warning "You are already logged into Traverse (JSON). Use the -force parrameter if you want to connect to a different one or use a different username";return}
+    if ($Global:TraverseSessionJSON -and !$force) {write-warning "You are already logged into Traverse (JSON). Use the -force parameter if you want to connect to a different one or use a different username";return}
 
     #Log in using Credentials
     $JSONAPIPath = '/api/json/'
