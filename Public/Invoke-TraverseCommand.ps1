@@ -27,9 +27,9 @@ Run the device.list command, and show only the resulting object output
         #The command you wish to execute
         [Parameter(Mandatory,Position=0)][String]$Command,
         #A list of arguments to pass with the command, as a hashtable, object array, or JSON string. If using FlexAPI, this MUST be a hashtable
-        [Parameter(Position=1)]$ArgumentList,
+        [Parameter(Position=1)]$ArgumentList = @{},
         #Specifies whether this is a REST (FlexAPI) or JSON command. Default is REST (FlexAPI)
-        [ValidateSet('REST','JSON')][String]$API = "REST",
+        [ValidateSet('REST','JSON')][String]$API = 'REST',
         #NONFUNCTIONAL: The session ID to use. Defaults to the currently connected session
         [Parameter(ParameterSetName="SessionID")][String]$SessionID,
         #NONFUNCTIONAL: Credentials to optionally specify to run this command as another user
@@ -42,7 +42,7 @@ Run the device.list command, and show only the resulting object output
             $APIPath = '/api/rest/command/' 
             $Method = 'GET'
             
-            if ($ArgumentList -ne $null -and $ArgumentList -isnot [System.Collections.Hashtable]) {throw 'ArgumentList must be specified as a hashtable for REST commands'}
+            if ($ArgumentList -isnot [System.Collections.Hashtable]) {throw 'ArgumentList must be specified as a hashtable for REST commands'}
             $ArgumentList.format = "json"
 
             #Ensure we have a connection
@@ -61,7 +61,7 @@ Run the device.list command, and show only the resulting object output
     }
 
     $RESTCommand = @{
-        URI = 'https://' + $TraverseHostname + $APIPath + $Command
+        URI = $TraverseProtocol + $TraverseHostname + $APIPath + $Command
         Method = $Method
         Body = $ArgumentList
         WebSession = $WebSession
