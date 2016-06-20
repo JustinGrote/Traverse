@@ -1,6 +1,10 @@
+os: WMF 5
+
 install:
- - ps: install-module pester -scope currentuser
+  - ps: install-module pester -scope currentuser
+ 
 build: false
-os: "WMF 5"
+
+
 test_script:
- - ps: . .\Tests\appveyor.pester.ps1 -Test -Finalize
+  - ps: . .\Tests\appveyor.pester.ps1 -Test -Finalize
