@@ -1,7 +1,7 @@
 os: WMF 5
 
 install:
-  - ps: install-module pester -scope currentuser
+  - ps: Install-Module pester -Scope CurrentUser -Confirm:$false
  
 build: false
 
