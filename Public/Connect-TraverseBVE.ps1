@@ -11,6 +11,10 @@ param (
     [PSCredential]$Credential = (get-credential -message "Enter your Traverse Username and Password"),
     #Create a new session even if one already exists
     [Switch]$Force,
+    #Do not show connection success information
+    [Switch]$Quiet,
+    #Connect without using SSL. NOT RECOMMENDED
+    [Switch]$NoSSL,
     #Skips the connection to the REST API
     [Switch]$NoREST,
     #Skip the connection to the JSON API
@@ -28,31 +32,39 @@ param (
 ) # Param
 
 
+#Specify the connectivity protocol
+if ($NoSSL) {$Global:TraverseProtocol = "http://"} else {$Global:TraverseProtocol = "https://"}
+
 #Create a REST Session
 if (!$NoREST) {
     #Check for existing session
-    if ($Global:TraverseSessionREST -and !$force) {write-warning "You are already logged into Traverse (REST). Use the -force parrameter if you want to connect to a different one or use a different username";return}
+    if ($Global:TraverseSessionREST -and !$force) {write-warning "You are already logged into Traverse (REST). Use the -force parameter if you want to connect to a different one or use a different username";return}
 
     #Log in using Credentials
-    $RESTLoginURI = "https://$Hostname/api/rest/command/login?" + $Credential.GetNetworkCredential().UserName + "/" + $Credential.GetNetworkCredential().Password
+    $RESTLoginURI = "$TraverseProtocol$Hostname/api/rest/command/login?" + $Credential.GetNetworkCredential().UserName + "/" + $Credential.GetNetworkCredential().Password
     $RESTLoginResult = Invoke-RestMethod -sessionvariable TraverseSessionREST -Uri $RESTLoginURI
     if ($RESTLoginResult -notmatch "OK") {throw "The connection failed to $Hostname. Reason: $RESTLoginResult"}
     $Global:TraverseSessionREST = $TraverseSessionREST
-    write-host -foreground green "Connected to $Hostname BVE as $($Credential.GetNetworkCredential().Username) using REST API"
+    if (!$Quiet) {
+        write-host -foreground green "Connected to $Hostname BVE as $($Credential.GetNetworkCredential().Username) using REST API"
+    }
+
     #Return The session if switch is set
     if ($RESTSessionPassThru) {$TraverseSessionREST}
-}
+
+    $GLOBAL:TraverseLastCommandTimeREST = [DateTime]::Now
+
+} #if !$NoREST
 
 #Create a JSON Session
 if (!$NoJSON) {
     #Check for existing session
-    if ($Global:TraverseSessionJSON -and !$force) {write-warning "You are already logged into Traverse (JSON). Use the -force parrameter if you want to connect to a different one or use a different username";return}
-
+    if ($Global:TraverseSessionJSON -and !$force) {write-warning "You are already logged into Traverse (JSON). Use the -force parameter if you want to connect to a different one or use a different username";return}
 
     #Log in using Credentials
     $JSONAPIPath = '/api/json/'
     $JSONCommandName = 'login/login'
-    $JSONCommandURI = 'https://' + $Hostname + $JSONAPIPath + $JSONCommandName
+    $JSONCommandURI = $TraverseProtocol + $Hostname + $JSONAPIPath + $JSONCommandName
 
     $JSONBody = @{
         username=$Credential.GetNetworkCredential().UserName
@@ -63,17 +75,19 @@ if (!$NoJSON) {
     if ($JSONLoginResult.success -notmatch "True") {throw "The connection failed to $Hostname. Reason: " + $JSONLoginResult.errorCode + ": " + $JSONLoginResult.errorMessage}
     $Global:TraverseSessionJSON = $TraverseSessionJSON
     
-    
-    write-host -foreground green "Connected to $Hostname BVE as $($Credential.GetNetworkCredential().Username) using JSON API"
+    if (!$Quiet) {
+        write-host -foreground green "Connected to $Hostname BVE as $($Credential.GetNetworkCredential().Username) using JSON API"
+    }
+    $GLOBAL:TraverseLastCommandTimeJSON = [DateTime]::Now
 
-}
+} # if !$NoJSON
 
 #Create Web Services (SOAP) connection
 if (!$NoWS) {
     if ($Global:TraverseSession -and !$force) {write-warning "You are already logged into Traverse (WS). Use the -force parameter if you want to connect to a different one or use a different username";return} 
 
     #Workaround for bug with new-webserviceproxy (http://www.sqlmusings.com/2012/02/04/resolving-ssrs-and-powershell-new-webserviceproxy-namespace-issue/)
-    $TraverseBVELoginWS = (new-webserviceproxy -uri "https://$($hostname)/api/soap/login?wsdl" -ErrorAction stop)
+    $TraverseBVELoginWS = (new-webserviceproxy -uri "$TraverseProtocol$Hostname/api/soap/login?wsdl" -ErrorAction stop)
     $TraverseBVELoginNS = $TraverseBVELoginWS.gettype().namespace
 
     #Create the login request and unpack the password from the encrypted credentials
@@ -87,7 +101,10 @@ if (!$NoWS) {
 
     set-variable -name TraverseSession -value $loginresult -scope Global
     set-variable -name TraverseHostname -value $hostname -scope Global
-    write-host -foreground green "Connected to $hostname BVE as $($loginrequest.username) using Web Services API"
+    if (!$Quiet) {
+        write-host -foreground green "Connected to $hostname BVE as $($loginrequest.username) using Web Services API"
+    }
+
     #Return the session if switch is set
     if ($WSSessionPassThru) {$LoginResult}
 } #If !$NoWS
@@ -98,7 +115,7 @@ if (!$NoLegacyWS) {
     <# I couldn't get this to work correctly so instead just saving the credentials to use for individual commands. Leaving this here for future debugging.
 
     #Workaround for bug with new-webserviceproxy (http://www.sqlmusings.com/2012/02/04/resolving-ssrs-and-powershell-new-webserviceproxy-namespace-issue/)
-    $TraverseBVELegacyLoginWS = (new-webserviceproxy -uri "https://$($hostname)/api/soap/public/sessionManager?wsdl" -ErrorAction stop)
+    $TraverseBVELegacyLoginWS = (new-webserviceproxy -uri "$TraverseProtocol://$($hostname)/api/soap/public/sessionManager?wsdl" -ErrorAction stop)
     $TraverseBVELegacyLoginNS = $TraverseBVELegacyLoginWS.gettype().namespace
 
     #Create the login request and unpack the password from the encrypted credentials
@@ -115,9 +132,11 @@ if (!$NoLegacyWS) {
     write-host "Connected to $hostname BVE as $($loginrequest.username) using SOAP API"
     #Return The session if switch is set
     if ($WSSessionPassThru) {$LoginResult}
-    #>
+    
     
     set-variable -scope Global -name "TraverseLegacyCredential" -value $credential
+
+    #>
 }
 
 } #Connect-TraverseBVE

@@ -86,7 +86,7 @@ Get devices that have at least one test defined with SQL in the name
         if (!$Global:TraverseSession) {write-warning "You are not connected to a Traverse BVE system. Use Connect-TraverseBVE first";return}
 
         #Connect to the Device Web Service
-        $TraverseBVEDeviceWS = (new-webserviceproxy -uri "https://$($TraverseHostname)/api/soap/device?wsdl" -ErrorAction stop)
+        $TraverseBVEDeviceWS = (new-webserviceproxy -uri "$TraverseProtocol$TraverseHostname/api/soap/device?wsdl" -ErrorAction stop)
         $TraverseBVEDeviceNS = $TraverseBVEDeviceWS.gettype().namespace
 
         #Create device request

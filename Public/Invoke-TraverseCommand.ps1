@@ -27,13 +27,13 @@ Run the device.list command, and show only the resulting object output
         #The command you wish to execute
         [Parameter(Mandatory,Position=0)][String]$Command,
         #A list of arguments to pass with the command, as a hashtable, object array, or JSON string. If using FlexAPI, this MUST be a hashtable
-        [Parameter(Position=1)]$ArgumentList,
+        [Parameter(Position=1)]$ArgumentList = @{},
         #Specifies whether this is a REST (FlexAPI) or JSON command. Default is REST (FlexAPI)
-        [ValidateSet('REST','JSON')][String]$API = "REST",
+        [ValidateSet('REST','JSON')][String]$API = 'REST',
         #NONFUNCTIONAL: The session ID to use. Defaults to the currently connected session
         [Parameter(ParameterSetName="SessionID")][String]$SessionID,
         #NONFUNCTIONAL: Credentials to optionally specify to run this command as another user
-        [Parameter(Mandatory,ParameterSetName="Credential")][PSCredential]$Credential
+        [Parameter(Mandatory,ParameterSetName="Credential")][PSCredential]$Credentials
     ) # Param
 
     #Prep the command parameters based on the API being chosen
@@ -42,11 +42,12 @@ Run the device.list command, and show only the resulting object output
             $APIPath = '/api/rest/command/' 
             $Method = 'GET'
             
-            
-            if ($ArgumentList -ne $null -and $ArgumentList -isnot [System.Collections.Hashtable]) {throw 'ArgumentList must be specified as a hashtable for REST commands'}
+            if ($ArgumentList -isnot [System.Collections.Hashtable]) {throw 'ArgumentList must be specified as a hashtable for REST commands'}
             $ArgumentList.format = "json"
 
+            #Ensure we have a connection
             if (!$Global:TraverseSessionREST) {throw 'You are not connected to a Traverse BVE system with REST. Use Connect-TraverseBVE first'}
+
             $WebSession = $Global:TraverseSessionREST
         }
         'JSON' { 
@@ -60,7 +61,7 @@ Run the device.list command, and show only the resulting object output
     }
 
     $RESTCommand = @{
-        URI = 'https://' + $TraverseHostname + $APIPath + $Command
+        URI = $TraverseProtocol + $TraverseHostname + $APIPath + $Command
         Method = $Method
         Body = $ArgumentList
         WebSession = $WebSession
@@ -88,8 +89,9 @@ Run the device.list command, and show only the resulting object output
             }
 
             else {
-                write-error ('Invoke-TraverseCommand ERROR: ' + $commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
+                write-error ($commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
             }
+            $GLOBAL:TraverseLastCommandTimeREST = [DateTime]::Now
         } #REST
 
         "JSON" {
@@ -98,11 +100,9 @@ Run the device.list command, and show only the resulting object output
                 return $commandResult.result
             }
             else {
-                write-error ('Invoke-TraverseCommand ERROR: ' + $commandResult.errorcode + ' ' + $commandResult.errormessage)
+                write-error ($commandResult.errorcode + ' ' + $commandResult.errormessage)
             }
-
+            $GLOBAL:TraverseLastCommandTimeJSON = [DateTime]::Now
         } #JSON
     } #Switch
-
-
 } #Connect-TraverseBVE
