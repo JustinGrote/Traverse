@@ -12,7 +12,7 @@
 RootModule = 'Traverse.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.5'
+ModuleVersion = '0.6'
 
 # ID used to uniquely identify this module
 GUID = 'd3949a34-7ac5-4100-ba7d-a11da31a05aa'
