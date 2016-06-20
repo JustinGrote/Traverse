@@ -1,10 +1,10 @@
 os: WMF 5
 
 install:
-  - ps: Install-Module pester -Scope CurrentUser -Confirm:$false
+  - ps: Install-PackageProvider -Name nuget -MinimumVersion 2.8.5.201 -force
+  - ps: Install-Module pester -Scope CurrentUser -Force
  
 build: false
-
 
 test_script:
   - ps: . .\Tests\appveyor.pester.ps1 -Test -Finalize
