@@ -9,7 +9,7 @@ This project is **first and foremost** a way to teach myself to build a Powershe
 Installation
 -
 ####[Powershell V5](https://www.microsoft.com/en-us/download/details.aspx?id=50395) and Later
-You can install Traverse directly from the Powershell Gallery
+You can install the Traverse module directly from the Powershell Gallery
 
 **Method 1** *[Recommended]*: Install to your personal Powershell Modules folder
 ```powershell
