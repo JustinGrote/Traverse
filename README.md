@@ -9,7 +9,7 @@ This project is **first and foremost** a way to teach myself to build a Powershe
 Installation
 -
 ####[Powershell V5](https://www.microsoft.com/en-us/download/details.aspx?id=50395) and Later
-You can install ImportExcel directly from the Powershell Gallery
+You can install Traverse directly from the Powershell Gallery
 
 **Method 1** *[Recommended]*: Install to your personal Powershell Modules folder
 ```powershell
@@ -24,4 +24,21 @@ To install to your personal modules folder (e.g. ~\Documents\WindowsPowerShell\M
 
 ```powershell
 iex (new-object System.Net.WebClient).DownloadString('https://raw.github.com/dfinke/ImportExcel/master/Install.ps1')
+```
+
+Getting Started
+-
+
+All commands have comment based help, so recommend starting with this:
+```powershell
+Get-Command -Module Traverse
+Get-Help <command> -Full
+```
+
+Quick Start Commands
+-
+```powershell
+Connect-Traversebve my.traversebve.com
+Get-TraverseDevice
+Get-TraverseTest -Device *
 ```
