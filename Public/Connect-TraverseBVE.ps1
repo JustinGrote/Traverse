@@ -1,7 +1,7 @@
 function Connect-TraverseBVE {
 <#
 .SYNOPSIS
- Connects to a Traverse BVE system with the Web Services API enabled.
+ Connects to a Traverse BVE system in order to execute commands on the system.
 #>
 
 param (
@@ -15,7 +15,7 @@ param (
     [Switch]$Quiet,
     #Connect without using SSL. NOT RECOMMENDED
     [Switch]$NoSSL,
-    #Skips the connection to the REST API
+    #Skips the connection to the REST API (BVE FlexAPI)
     [Switch]$NoREST,
     #Skip the connection to the JSON API
     [Switch]$NoJSON,
@@ -24,13 +24,12 @@ param (
     #Skips the connection to the legacy Web Services API
     [Switch]$NoLegacyWS,
     #Pass the REST session object to the pipeline. Useful if you want to work with multiple sessions simultaneously
-    [Switch]$RESTPassThru,
+    [Switch]$PassThruREST,
     #Pass the JSON session object to the pipeline. Useful if you want to work with multiple sessions simultaneously
-    [Switch]$JSONPassThru,
+    [Switch]$PassThruJSON,
     #Pass the SOAP session object to the pipeline. Useful if you want to work with multiple sessions simultaneously
-    [Switch]$WSPassThru
+    [Switch]$PassThruWS
 ) # Param
-
 
 #Specify the connectivity protocol
 if ($NoSSL) {$SCRIPT:TraverseProtocol = "http://"} else {$SCRIPT:TraverseProtocol = "https://"}
@@ -38,50 +37,60 @@ if ($NoSSL) {$SCRIPT:TraverseProtocol = "http://"} else {$SCRIPT:TraverseProtoco
 #Create a REST Session
 if (!$NoREST) {
     #Check for existing session
-    if ($SCRIPT:TraverseSessionREST -and !$force) {write-warning "You are already logged into Traverse (REST). Use the -force parameter if you want to connect to a different server or use a different username";return}
+    if ($TraverseSessionREST -and !$force) {write-warning "You are already logged into Traverse (REST). Use the -force parameter if you want to connect to a different server or use a different username";return}
 
     #Log in using Credentials
     $RESTLoginURI = "$TraverseProtocol$Hostname/api/rest/command/login?" + $Credential.GetNetworkCredential().UserName + "/" + $Credential.GetNetworkCredential().Password
+    
     $RESTLoginResult = Invoke-RestMethod -sessionvariable TraverseSessionREST -Uri $RESTLoginURI
     if ($RESTLoginResult -notmatch "OK") {throw "The connection failed to $Hostname. Reason: $RESTLoginResult"}
+
+    #Workaround for SessionVariable parameter not allowing you to specify the scope
+    #We need this to persist throughout the module lifetime
+    $SCRIPT:TraverseSessionREST = $TraverseSessionREST
 
     if (!$Quiet) {
         write-host -foreground green "Connected to $Hostname BVE as $($Credential.GetNetworkCredential().Username) using REST API"
     }
 
     #Return the login session if switch is set
-    if ($RESTPassThru) {$SCRIPT:TraverseSessionREST}
+    if ($PassThruREST) {$TraverseSessionREST}
 
-    $SCRIPT:TraverseLastCommandDateREST = [DateTime]::Now
+    #Set the Refresh Interval
+    $SCRIPT:TraverseRefreshDateREST = [DateTime]::Now.AddMinutes(180).AddMinutes(-5)
 
 } #if !$NoREST
 
 #Create a JSON Session
 if (!$NoJSON) {
     #Check for existing session
-    if ($SCRIPT:TraverseSessionJSON -and !$force) {write-warning "You are already logged into Traverse (JSON). Use the -force parameter if you want to connect to a different server or use a different username";return}
+    if ($TraverseSessionJSON -and !$force) {write-warning "You are already logged into Traverse (JSON). Use the -force parameter if you want to connect to a different server or use a different username";return}
 
     #Log in using Credentials
     $JSONAPIPath = '/api/json/'
     $JSONCommandName = 'login/login'
     $JSONCommandURI = $TraverseProtocol + $Hostname + $JSONAPIPath + $JSONCommandName
-
     $JSONBody = @{
         username=$Credential.GetNetworkCredential().UserName
         password=$Credential.GetNetworkCredential().Password
     }
-    #Initialize at script (module) scope for setting with Invoke-Restmethod
-    $SCRIPT:TraverseSessionJSON = $null
+
     $SCRIPT:JSONLoginResult = Invoke-RestMethod -Method POST -Uri $JSONCommandURI -Body (ConvertTo-Json -compress $JSONBody) -ContentType 'application/json' -SessionVariable TraverseSessionJSON
-    if ($JSONLoginResult.success -notmatch "True") {throw "The connection failed to $Hostname. Reason: " + $JSONLoginResult.errorCode + ": " + $JSONLoginResult.errorMessage}
-    
+    if ($JSONLoginResult.success -ne "True") {throw "The connection failed to $Hostname. Reason: " + $JSONLoginResult.errorCode + ": " + $JSONLoginResult.errorMessage}
+
+    #Workaround for SessionVariable parameter not allowing you to specify the scope
+    #We need this to persist throughout the module lifetime
+    $SCRIPT:TraverseSessionJSON = $TraverseSessionJSON
+
     if (!$Quiet) {
         write-host -foreground green "Connected to $Hostname BVE as $($Credential.GetNetworkCredential().Username) using JSON API"
     }
-    $SCRIPT:TraverseLastCommandTimeJSON = [DateTime]::Now
 
     #Return the login result if switch is set
-    if ($JSONPassThru) {$SCRIPT:JSONLoginResult}
+    if ($PassThruJSON) {$JSONLoginResult}
+
+    #Set the session expiration (Refresh Interval Minus 5 minutes)
+    $SCRIPT:TraverseRefreshDateJSON = [DateTime]::Now.addminutes($JSONLoginResult.result.refreshInterval).addminutes(-5)
 
 } # if !$NoJSON
 
