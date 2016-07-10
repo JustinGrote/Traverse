@@ -33,12 +33,12 @@ param (
 
 
 #Specify the connectivity protocol
-if ($NoSSL) {$Script:TraverseProtocol = "http://"} else {$Script:TraverseProtocol = "https://"}
+if ($NoSSL) {$SCRIPT:TraverseProtocol = "http://"} else {$SCRIPT:TraverseProtocol = "https://"}
 
 #Create a REST Session
 if (!$NoREST) {
     #Check for existing session
-    if ($Script:TraverseSessionREST -and !$force) {write-warning "You are already logged into Traverse (REST). Use the -force parameter if you want to connect to a different server or use a different username";return}
+    if ($SCRIPT:TraverseSessionREST -and !$force) {write-warning "You are already logged into Traverse (REST). Use the -force parameter if you want to connect to a different server or use a different username";return}
 
     #Log in using Credentials
     $RESTLoginURI = "$TraverseProtocol$Hostname/api/rest/command/login?" + $Credential.GetNetworkCredential().UserName + "/" + $Credential.GetNetworkCredential().Password
@@ -50,16 +50,16 @@ if (!$NoREST) {
     }
 
     #Return the login session if switch is set
-    if ($RESTPassThru) {$Script:TraverseSessionREST}
+    if ($RESTPassThru) {$SCRIPT:TraverseSessionREST}
 
-    $Script:TraverseLastCommandDateREST = [DateTime]::Now
+    $SCRIPT:TraverseLastCommandDateREST = [DateTime]::Now
 
 } #if !$NoREST
 
 #Create a JSON Session
 if (!$NoJSON) {
     #Check for existing session
-    if ($Script:TraverseSessionJSON -and !$force) {write-warning "You are already logged into Traverse (JSON). Use the -force parameter if you want to connect to a different server or use a different username";return}
+    if ($SCRIPT:TraverseSessionJSON -and !$force) {write-warning "You are already logged into Traverse (JSON). Use the -force parameter if you want to connect to a different server or use a different username";return}
 
     #Log in using Credentials
     $JSONAPIPath = '/api/json/'
@@ -70,24 +70,24 @@ if (!$NoJSON) {
         username=$Credential.GetNetworkCredential().UserName
         password=$Credential.GetNetworkCredential().Password
     }
-
-    $Script:JSONLoginResult = Invoke-RestMethod -Method POST -Uri $JSONCommandURI -Body (ConvertTo-Json -compress $JSONBody) -ContentType 'application/json' -SessionVariable TraverseSessionJSON
+    #Initialize at script (module) scope for setting with Invoke-Restmethod
+    $SCRIPT:TraverseSessionJSON = $null
+    $SCRIPT:JSONLoginResult = Invoke-RestMethod -Method POST -Uri $JSONCommandURI -Body (ConvertTo-Json -compress $JSONBody) -ContentType 'application/json' -SessionVariable TraverseSessionJSON
     if ($JSONLoginResult.success -notmatch "True") {throw "The connection failed to $Hostname. Reason: " + $JSONLoginResult.errorCode + ": " + $JSONLoginResult.errorMessage}
-    $Script:TraverseSessionJSON = $TraverseSessionJSON
     
     if (!$Quiet) {
         write-host -foreground green "Connected to $Hostname BVE as $($Credential.GetNetworkCredential().Username) using JSON API"
     }
-    $Script:TraverseLastCommandTimeJSON = [DateTime]::Now
+    $SCRIPT:TraverseLastCommandTimeJSON = [DateTime]::Now
 
     #Return the login result if switch is set
-    if ($JSONPassThru) {$Script:JSONLoginResult}
+    if ($JSONPassThru) {$SCRIPT:JSONLoginResult}
 
 } # if !$NoJSON
 
 #Create Web Services (SOAP) connection
 if (!$NoWS) {
-    if ($Script:TraverseSession -and !$force) {write-warning "You are already logged into Traverse (WS). Use the -force parameter if you want to connect to a different server or use a different username";return} 
+    if ($SCRIPT:TraverseSession -and !$force) {write-warning "You are already logged into Traverse (WS). Use the -force parameter if you want to connect to a different server or use a different username";return} 
 
     #Workaround for bug with new-webserviceproxy (http://www.sqlmusings.com/2012/02/04/resolving-ssrs-and-powershell-new-webserviceproxy-namespace-issue/)
     $TraverseBVELoginWS = (new-webserviceproxy -uri "$TraverseProtocol$Hostname/api/soap/login?wsdl" -ErrorAction stop)
@@ -109,7 +109,7 @@ if (!$NoWS) {
     }
 
     #Return the session if switch is set
-    if ($WSSessionPassThru) {$Script:LoginResult}
+    if ($WSSessionPassThru) {$SCRIPT:LoginResult}
 } #If !$NoWS
 
 #Create a Legacy WS Session
