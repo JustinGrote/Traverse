@@ -8,7 +8,7 @@ param (
     #The DNS name or IP address of the Traverse BVE system
     [Parameter(Mandatory=$true)][String]$Hostname,
     #The username and password needed to access the system in secure PSCredential format.
-    [PSCredential]$Credential = (get-credential -message "Enter your Traverse Username and Password"),
+    [Parameter(Mandatory=$true)][PSCredential]$Credential,
     #Create a new session even if one already exists
     [Switch]$Force,
     #Do not show connection success information
@@ -55,9 +55,6 @@ if (!$NoREST) {
 
     #Return the login session if switch is set
     if ($PassThruREST) {$TraverseSessionREST}
-
-    #Set the Refresh Interval
-    $SCRIPT:TraverseRefreshDateREST = [DateTime]::Now.AddMinutes(180).AddMinutes(-5)
 
 } #if !$NoREST
 
@@ -121,34 +118,15 @@ if (!$NoWS) {
     if ($WSSessionPassThru) {$SCRIPT:LoginResult}
 } #If !$NoWS
 
-#Create a Legacy WS Session
-if (!$NoLegacyWS) {
-    
-    <# I couldn't get this to work correctly so instead just saving the credentials to use for individual commands. Leaving this here for future debugging.
-
-    #Workaround for bug with new-webserviceproxy (http://www.sqlmusings.com/2012/02/04/resolving-ssrs-and-powershell-new-webserviceproxy-namespace-issue/)
-    $TraverseBVELegacyLoginWS = (new-webserviceproxy -uri "$TraverseProtocol://$($hostname)/api/soap/public/sessionManager?wsdl" -ErrorAction stop)
-    $TraverseBVELegacyLoginNS = $TraverseBVELegacyLoginWS.gettype().namespace
-
-    #Create the login request and unpack the password from the encrypted credentials
-    $sessionManager = new-object ($TraverseBVELegacyLoginNS + '.sessionManager')
-    $loginRequest = new-object ($TraverseBVELegacyLoginNS + '.loginRequest')
-    $loginRequest.username = $credential.GetNetworkCredential().Username
-    $loginRequest.password = $credential.GetNetworkCredential().Password
-
-    $loginResult = $sessionManager.login($loginRequest)
-
-    if ($loginResult.statusmessage -match "error") {throw "The connection failed to $Hostname. Reason: $($loginResult.statusmessage)"}
-    set-variable -name TraverseSession -value $loginresult -scope Global
-    set-variable -name TraverseHostname -value $hostname -scope Global
-    write-host "Connected to $hostname BVE as $($loginrequest.username) using SOAP API"
-    #Return The session if switch is set
-    if ($WSSessionPassThru) {$LoginResult}
-    
-    
-    set-variable -scope Global -name "TraverseLegacyCredential" -value $credential
-
-    #>
+#Set the Refresh Interval which Invoke-TraverseCommand will use to determine reconnect
+#TODO: Make this deterministic per-protocol. For now it refreshes everything
+#It also introduces a condition where multiple independent connects don't work.
+if ($JSONLoginResult) {
+    $SCRIPT:TraverseConnectRefreshDate = [DateTime]::Now.AddMinutes($JSONLoginResult.result.refreshInterval).addminutes(-5)
 }
+else {
+    $SCRIPT:TraverseConnectRefreshDate = [DateTime]::Now.AddMinutes(180).AddMinutes(-5)
+}
+$SCRIPT:TraverseConnectParams = $PSBoundParameters
 
 } #Connect-TraverseBVE
