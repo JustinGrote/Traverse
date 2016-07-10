@@ -6,7 +6,7 @@ Executes a command using either the Traverse JSON or REST Interfaces
 .DESCRIPTION
 This cmdlet executes a Traverse API command and formats the result as a Powershell Custom Object
 This cmdlet mostly serves as a wrapper around the APIs to make them easier to use.
-Most of the commands in the Traverse module use this command as the foundation to execute their actions
+Most of the commands in the Traverse module use this command as the foundation to execute their actions.
 
 .NOTES
 Modeled after Native Powershell functions Invoke-Command and Invoke-Expression.
@@ -36,6 +36,12 @@ Run the device.list command, and show only the resulting object output
         [Parameter(Mandatory,ParameterSetName="Credential")][PSCredential]$Credentials
     ) # Param
 
+    #Determine if we need to refresh the connection based on the timeout interval. Use a 5 second buffer to account for command latency
+    if ($TraverseConnectRefreshDate -lt [DateTime]::Now) {
+        write-verbose "JSON Refresh Timer Expired. Refreshing Login..."
+        connect-traversebve @TraverseConnectParams -Quiet -Force
+    }
+
     #Prep the command parameters based on the API being chosen
     switch ($API) {
         'REST' { 
@@ -46,17 +52,19 @@ Run the device.list command, and show only the resulting object output
             $ArgumentList.format = "json"
 
             #Ensure we have a connection
-            if (!$Global:TraverseSessionREST) {throw 'You are not connected to a Traverse BVE system with REST. Use Connect-TraverseBVE first'}
+            if (!$Script:TraverseSessionREST) {throw 'You are not connected to a Traverse BVE system with REST. Use Connect-TraverseBVE first'}
 
-            $WebSession = $Global:TraverseSessionREST
+            $WebSession = $Script:TraverseSessionREST
         }
         'JSON' { 
             $APIPath = '/api/json/' 
             $Method = 'POST'
             $ArgumentList = ConvertTo-Json -Compress $ArgumentList
 
-            if (!$Global:TraverseSessionJSON) {throw 'You are not connected to a Traverse BVE system with JSON. Use Connect-TraverseBVE first'}
-            $WebSession = $Global:TraverseSessionJSON
+            #Ensure we have a connection
+            if (!$Script:TraverseSessionJSON) {throw 'You are not connected to a Traverse BVE system with JSON. Use Connect-TraverseBVE first'}
+
+            $WebSession = $Script:TraverseSessionJSON
         }
     }
 
@@ -91,7 +99,6 @@ Run the device.list command, and show only the resulting object output
             else {
                 write-error ($commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
             }
-            $GLOBAL:TraverseLastCommandTimeREST = [DateTime]::Now
         } #REST
 
         "JSON" {
@@ -102,7 +109,6 @@ Run the device.list command, and show only the resulting object output
             else {
                 write-error ($commandResult.errorcode + ' ' + $commandResult.errormessage)
             }
-            $GLOBAL:TraverseLastCommandTimeJSON = [DateTime]::Now
         } #JSON
     } #Switch
 } #Connect-TraverseBVE
