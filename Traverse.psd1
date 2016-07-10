@@ -12,7 +12,7 @@
 RootModule = 'Traverse.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.6'
+ModuleVersion = '0.6.1'
 
 # ID used to uniquely identify this module
 GUID = 'd3949a34-7ac5-4100-ba7d-a11da31a05aa'
@@ -27,7 +27,7 @@ Author = "Justin Grote"
 Copyright = 'MIT License. (c) 2016 Justin Grote. All rights reserved.'
 
 # Description of the functionality provided by this module
-Description = '*UNOFFICIAL* Kaseya Traverse Management. ONLY TESTED ON TRAVERSE 7.X'
+Description = '*UNOFFICIAL* Kaseya Traverse Management'
 
 # Minimum version of the Windows PowerShell engine required by this module
 PowerShellVersion = '3.0'
@@ -98,10 +98,10 @@ PrivateData = @{
         Title = "Kaseya Traverse"
 
         # A URL to the license for this module.
-        LicenseUri = 'http://www.apache.org/licenses/LICENSE-2.0'
+        LicenseUri = 'https://github.com/JustinGrote/Traverse/blob/master/LICENSE.TXT'
 
         # A URL to the main website for this project.
-        # ProjectUri = ''
+        # ProjectUri = 'https://github.com/JustinGrote/Traverse'
 
         # A URL to an icon representing this module.
         IconUri = 'http://i.imgur.com/PZcQyZT.png'
