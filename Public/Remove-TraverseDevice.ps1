@@ -15,7 +15,7 @@ function Remove-TraverseDevice {
     )
 
     begin {
-        if (!$Global:TraverseSessionREST) {write-warning "You are not connected to a Traverse BVE system via REST. Use Connect-TraverseBVE first";return}
+        if (!$Script:TraverseSessionREST) {write-warning "You are not connected to a Traverse BVE system via REST. Use Connect-TraverseBVE first";return}
     }
 
 

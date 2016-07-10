@@ -29,7 +29,7 @@ param (
 )
 
 begin {
-    if (!$Global:TraverseSessionREST) {write-warning "You are not connected to a Traverse BVE system via REST. Use Connect-TraverseBVE first";return}
+    if (!$Script:TraverseSessionREST) {write-warning "You are not connected to a Traverse BVE system via REST. Use Connect-TraverseBVE first";return}
     
     #Populate the update information based on what was provided
     $setDeviceParams = [ordered]@{}

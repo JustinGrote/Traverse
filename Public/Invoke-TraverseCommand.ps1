@@ -46,17 +46,23 @@ Run the device.list command, and show only the resulting object output
             $ArgumentList.format = "json"
 
             #Ensure we have a connection
-            if (!$Global:TraverseSessionREST) {throw 'You are not connected to a Traverse BVE system with REST. Use Connect-TraverseBVE first'}
+            if (!$Script:TraverseSessionREST) {throw 'You are not connected to a Traverse BVE system with REST. Use Connect-TraverseBVE first'}
 
-            $WebSession = $Global:TraverseSessionREST
+            $WebSession = $Script:TraverseSessionREST
         }
         'JSON' { 
             $APIPath = '/api/json/' 
             $Method = 'POST'
             $ArgumentList = ConvertTo-Json -Compress $ArgumentList
 
-            if (!$Global:TraverseSessionJSON) {throw 'You are not connected to a Traverse BVE system with JSON. Use Connect-TraverseBVE first'}
-            $WebSession = $Global:TraverseSessionJSON
+            if (!$Script:TraverseSessionJSON) {throw 'You are not connected to a Traverse BVE system with JSON. Use Connect-TraverseBVE first'}
+            
+            #Determine if we need to refresh the connection based on the timeout interval. Use a 5 second buffer to account for command latency
+            if ($TraverseLastCommandDateREST) {
+                connect-traversebve -no
+            }
+
+            $WebSession = $Script:TraverseSessionJSON
         }
     }
 
@@ -91,7 +97,7 @@ Run the device.list command, and show only the resulting object output
             else {
                 write-error ($commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
             }
-            $GLOBAL:TraverseLastCommandTimeREST = [DateTime]::Now
+            $Script:TraverseLastCommandTimeREST = [DateTime]::Now
         } #REST
 
         "JSON" {
@@ -102,7 +108,7 @@ Run the device.list command, and show only the resulting object output
             else {
                 write-error ($commandResult.errorcode + ' ' + $commandResult.errormessage)
             }
-            $GLOBAL:TraverseLastCommandTimeJSON = [DateTime]::Now
+            $Script:TraverseLastCommandTimeJSON = [DateTime]::Now
         } #JSON
     } #Switch
 } #Connect-TraverseBVE
