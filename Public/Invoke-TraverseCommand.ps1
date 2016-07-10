@@ -6,7 +6,7 @@ Executes a command using either the Traverse JSON or REST Interfaces
 .DESCRIPTION
 This cmdlet executes a Traverse API command and formats the result as a Powershell Custom Object
 This cmdlet mostly serves as a wrapper around the APIs to make them easier to use.
-Most of the commands in the Traverse module use this command as the foundation to execute their actions
+Most of the commands in the Traverse module use this command as the foundation to execute their actions.
 
 .NOTES
 Modeled after Native Powershell functions Invoke-Command and Invoke-Expression.

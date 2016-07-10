@@ -2,6 +2,9 @@ function Connect-TraverseBVE {
 <#
 .SYNOPSIS
  Connects to a Traverse BVE system in order to execute commands on the system.
+
+.NOTES
+ You should only use Connect-TraverseBVE once per powershell session.
 #>
 
 param (
