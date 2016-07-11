@@ -28,10 +28,10 @@ monitorConfigUsage : @{testCount=449; devices=System.Object[]}
 
 #>
 
-    [CmdletBinding()]
+[CmdletBinding()]
 
-    param (
-    ) # Param
+param (
+) # Param
 
 #region Main
     process {
