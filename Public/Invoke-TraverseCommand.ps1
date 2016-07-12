@@ -30,6 +30,10 @@ Run the device.list command, and show only the resulting object output
         [Parameter(Position=1)]$ArgumentList = @{},
         #Specifies whether this is a REST (FlexAPI) or JSON command. Default is REST (FlexAPI)
         [ValidateSet('REST','JSON')][String]$API = 'REST',
+        #Perform a "GET" instead of a "POST" with the JSON API
+        [Switch]$Get,
+        #Direct the output to a file
+        [String]$OutFile,
         #NONFUNCTIONAL: The session ID to use. Defaults to the currently connected session
         [Parameter(ParameterSetName="SessionID")][String]$SessionID,
         #NONFUNCTIONAL: Credentials to optionally specify to run this command as another user
@@ -58,8 +62,14 @@ Run the device.list command, and show only the resulting object output
         }
         'JSON' { 
             $APIPath = '/api/json/' 
-            $Method = 'POST'
-            $ArgumentList = ConvertTo-Json -Compress $ArgumentList
+            if (!($Get)) {
+                $Method = 'POST'
+                $ArgumentList = ConvertTo-Json -Compress $ArgumentList
+            } else {
+                $Method = 'GET'
+            }
+            
+            
 
             #Ensure we have a connection
             if (!$Script:TraverseSessionJSON) {throw 'You are not connected to a Traverse BVE system with JSON. Use Connect-TraverseBVE first'}
@@ -76,6 +86,10 @@ Run the device.list command, and show only the resulting object output
         ContentType = 'application/json'
     }
 
+    if ($OutFile) {
+        $RESTCommand.Add("OutFile",$OutFile)
+    }
+
     if (!($PSCmdlet.ShouldProcess($RESTCommand.URI,"Invoke $API Command"))) {return}
     $commandResult = Invoke-RestMethod @RESTCommand
 
@@ -87,28 +101,31 @@ Run the device.list command, and show only the resulting object output
     }
 
 
-    #Error Checking and results return are API-dependent
-    switch ($API) {
-        "REST" {
+    #Error Checking and results return are API-dependent.
 
-            if ($commandresult.'api-response'.status.error -eq 'false') {
-                write-verbose ('Invoke-TraverseCommand Successful: ' + $commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
-                return $commandResult.'api-response'
-            }
+    #Skip if Outfile was specified as there won't be any results to interpret.
+    if (!($OutFile)) {
+        switch ($API) {
+            "REST" {
+                if ($commandresult.'api-response'.status.error -eq 'false') {
+                    write-verbose ('Invoke-TraverseCommand Successful: ' + $commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
+                    return $commandResult.'api-response'
+                }
 
-            else {
-                write-error ($commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
-            }
-        } #REST
+                else {
+                    write-error ("Command Failed:" + $commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
+                }
+            } #REST
 
-        "JSON" {
-            if ($commandResult.success) {
-                write-verbose ('Invoke-TraverseCommand Successful: ' + $commandResult.errorcode + ' ' + $commandResult.errormessage)
-                return $commandResult.result
-            }
-            else {
-                write-error ($commandResult.errorcode + ' ' + $commandResult.errormessage)
-            }
-        } #JSON
-    } #Switch
+            "JSON" {
+                if ($commandResult.success) {
+                    write-verbose ('Invoke-TraverseCommand Successful: ' + $commandResult.errorcode + ' ' + $commandResult.errormessage)
+                    return $commandResult.result
+                }
+                else {
+                    write-error ("Command Failed:" + $commandResult.errorcode + ' ' + $commandResult.errormessage)
+                }
+            } #JSON
+        } #Switch
+    } #If Not Outfile
 } #Connect-TraverseBVE
