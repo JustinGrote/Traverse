@@ -96,7 +96,7 @@ if (!$NoJSON) {
 
 #Create Web Services (SOAP) connection
 if (!$NoWS) {
-    if ($SCRIPT:TraverseSession -and !$force) {write-warning "You are already logged into Traverse (WS). Use the -force parameter if you want to connect to a different server or use a different username";return} 
+    if ($TraverseSession -and !$force) {write-warning "You are already logged into Traverse (WS). Use the -force parameter if you want to connect to a different server or use a different username";return} 
 
     #Workaround for bug with new-webserviceproxy (http://www.sqlmusings.com/2012/02/04/resolving-ssrs-and-powershell-new-webserviceproxy-namespace-issue/)
     $TraverseBVELoginWS = (new-webserviceproxy -uri "$TraverseProtocol$Hostname/api/soap/login?wsdl" -ErrorAction stop)
@@ -111,7 +111,7 @@ if (!$NoWS) {
 
     if (!$loginResult.success) {throw "The connection failed to $Hostname. Reason: Error $($loginresult.errorcode) $($loginresult.errormessage)"}
 
-    set-variable -name TraverseSession -value $loginresult -scope Global
+    set-variable -name TraverseSession -value $loginresult -scope Script
     set-variable -name TraverseHostname -value $hostname -scope Global
     if (!$Quiet) {
         write-host -foreground green "Connected to $hostname BVE as $($loginrequest.username) using Web Services API"
