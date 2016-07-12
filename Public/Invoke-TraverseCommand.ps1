@@ -40,11 +40,7 @@ Run the device.list command, and show only the resulting object output
         [Parameter(Mandatory,ParameterSetName="Credential")][PSCredential]$Credentials
     ) # Param
 
-    #Determine if we need to refresh the connection based on the timeout interval. Use a 5 second buffer to account for command latency
-    if ($TraverseConnectRefreshDate -lt [DateTime]::Now) {
-        write-warning "JSON Refresh Timer Expired. Refreshing Login..."
-        connect-traversebve @TraverseConnectParams -Quiet -Force
-    }
+
 
     #Prep the command parameters based on the API being chosen
     switch ($API) {
@@ -58,6 +54,12 @@ Run the device.list command, and show only the resulting object output
             #Ensure we have a connection
             if (!$TraverseSessionREST) {throw 'You are not connected to a Traverse BVE system with REST. Use Connect-TraverseBVE first'}
 
+            #Determine if we need to refresh the connection based on the timeout interval. Use a 5 second buffer to account for command latency
+            if ($TraverseConnectRefreshDate -lt [DateTime]::Now) {
+                write-warning "JSON Refresh Timer Expired. Refreshing Login..."
+                connect-traversebve @TraverseConnectParams -Quiet -Force
+            }
+
             $WebSession = $TraverseSessionREST
         }
         'JSON' { 
@@ -69,10 +71,15 @@ Run the device.list command, and show only the resulting object output
                 $Method = 'GET'
             }
             
-            
 
             #Ensure we have a connection
             if (!$TraverseSessionJSON) {throw 'You are not connected to a Traverse BVE system with JSON. Use Connect-TraverseBVE first'}
+
+            #Determine if we need to refresh the connection based on the timeout interval. Use a 5 second buffer to account for command latency
+            if ($TraverseConnectRefreshDate -lt [DateTime]::Now) {
+                write-warning "JSON Refresh Timer Expired. Refreshing Login..."
+                connect-traversebve @TraverseConnectParams -Quiet -Force
+            }
 
             $WebSession = $TraverseSessionJSON
         }
