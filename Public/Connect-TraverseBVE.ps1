@@ -89,9 +89,6 @@ if (!$NoJSON) {
     #Return the login result if switch is set
     if ($PassThruJSON) {$JSONLoginResult}
 
-    #Set the session expiration (Refresh Interval Minus 5 minutes)
-    $SCRIPT:TraverseRefreshDateJSON = [DateTime]::Now.addminutes($JSONLoginResult.result.refreshInterval).addminutes(-5)
-
 } # if !$NoJSON
 
 #Create Web Services (SOAP) connection
