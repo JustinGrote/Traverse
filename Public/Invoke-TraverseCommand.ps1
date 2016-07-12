@@ -42,7 +42,7 @@ Run the device.list command, and show only the resulting object output
 
     #Determine if we need to refresh the connection based on the timeout interval. Use a 5 second buffer to account for command latency
     if ($TraverseConnectRefreshDate -lt [DateTime]::Now) {
-        write-verbose "JSON Refresh Timer Expired. Refreshing Login..."
+        write-warning "JSON Refresh Timer Expired. Refreshing Login..."
         connect-traversebve @TraverseConnectParams -Quiet -Force
     }
 
@@ -128,4 +128,4 @@ Run the device.list command, and show only the resulting object output
             } #JSON
         } #Switch
     } #If Not Outfile
-} #Connect-TraverseBVE
+} #Invoke-TraverseCommand
