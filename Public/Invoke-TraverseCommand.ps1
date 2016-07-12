@@ -56,9 +56,9 @@ Run the device.list command, and show only the resulting object output
             $ArgumentList.format = "json"
 
             #Ensure we have a connection
-            if (!$Script:TraverseSessionREST) {throw 'You are not connected to a Traverse BVE system with REST. Use Connect-TraverseBVE first'}
+            if (!$TraverseSessionREST) {throw 'You are not connected to a Traverse BVE system with REST. Use Connect-TraverseBVE first'}
 
-            $WebSession = $Script:TraverseSessionREST
+            $WebSession = $TraverseSessionREST
         }
         'JSON' { 
             $APIPath = '/api/json/' 
@@ -72,9 +72,9 @@ Run the device.list command, and show only the resulting object output
             
 
             #Ensure we have a connection
-            if (!$Script:TraverseSessionJSON) {throw 'You are not connected to a Traverse BVE system with JSON. Use Connect-TraverseBVE first'}
+            if (!$TraverseSessionJSON) {throw 'You are not connected to a Traverse BVE system with JSON. Use Connect-TraverseBVE first'}
 
-            $WebSession = $Script:TraverseSessionJSON
+            $WebSession = $TraverseSessionJSON
         }
     }
 
