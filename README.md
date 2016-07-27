@@ -38,7 +38,7 @@ Get-Help <command> -Full
 Quick Start Commands
 -
 ```powershell
-Connect-Traversebve my.traversebve.com
+Connect-TraverseBVE my.traversebve.com
 Get-TraverseDevice
 Get-TraverseTest -Device *
 ```
