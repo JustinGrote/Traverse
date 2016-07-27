@@ -88,7 +88,6 @@ if (!$NoJSON) {
         URI = $JSONCommandURI
         Body = (ConvertTo-Json -compress $JSONBody)
         SessionVariable = "TraverseSessionJSON"
-
     }
 
     $SCRIPT:JSONLoginResult = Invoke-RestMethod @JSONRestMethodParams
