@@ -4,7 +4,7 @@ function Get-TraverseDevice {
 Retrieves Traverse Devices based on specified criteria.
 
 .DESCRIPTION
-This command leverages the Traverse APIs to gather information about devices in Traverse. 
+This command leverages the Traverse APIs to gather information about devices in Traverse.
 It retrieves all devices visible to the user by default if no parameters are specified.
 
 .PARAMETER Filter
@@ -74,7 +74,9 @@ Get devices that have at least one test defined with SQL in the name
 
     if ($PSCmdlet.ParameterSetName -eq "REST") {
         $argumentList = @{}
-        $argumentList.deviceName = $DeviceName
+        #Replace spaces with wildcards to get around an API bug
+        #TODO: FixMe with a better solution
+        $argumentList.deviceName = $DeviceName -replace ' ','*'
         if ($Username) {$argumentList.userName = $UserName}
 
         (Invoke-TraverseCommand device.list $argumentList -Verbose:($PSBoundParameters['Verbose'] -eq $true)).data.object
