@@ -72,7 +72,7 @@ Get devices that have at least one test defined with SQL in the name
             ValueFromPipelineByPropertyName)]
             [String[]]$DeviceName = '*',
         #[SUPERUSER ONLY] Restrict scope of search to what the specified user can see
-        [Parameter(ParameterSetName="REST")][String]$UserName,
+        [Parameter(ParameterSetName="REST")][String]$RunAs,
         [Parameter(ParameterSetName="WS")][String]$Filter
     ) # Param
 
@@ -82,7 +82,7 @@ Get devices that have at least one test defined with SQL in the name
             #Replace spaces with wildcards to get around an API bug
             #TODO: FixMe with a better solution
             $argumentList.deviceName = $DeviceNameItem -replace ' ','*'
-            if ($Username) {$argumentList.userName = $UserName}
+            if ($RunAs) {$argumentList.userName = $RunAs}
 
             (Invoke-TraverseCommand device.list $argumentList -Verbose:($PSBoundParameters['Verbose'] -eq $true)).data.object
         } #If ParameterSet REST
