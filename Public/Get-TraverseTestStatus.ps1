@@ -25,7 +25,7 @@ This command leverages the Traverse APIs to get the current status of a device.
             "deviceName" {
                 $argumentList.searchCriterias = @(@{
                     SearchOption = "DEVICE_NAME"
-                    SearchTerms = $DeviceName
+                    SearchTerms = $DeviceName -replace ' ','*'
                 })
             }
             "testSerial" {
@@ -33,7 +33,7 @@ This command leverages the Traverse APIs to get the current status of a device.
                     SearchOption = "TEST_SERIAL_NUMBER"
                     SearchTerms = $TestSerial
                 })
-            
+
             }
         }
 
