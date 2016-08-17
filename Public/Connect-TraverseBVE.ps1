@@ -40,11 +40,15 @@ if ($NoSSL) {$SCRIPT:TraverseProtocol = "http://"} else {$SCRIPT:TraverseProtoco
 #Create a REST Session
 if (!$NoREST) {
     #Check for existing session
-    if ($TraverseSessionREST -and !$force) {write-warning "You are already logged into Traverse (REST). Use the -force parameter if you want to connect to a different server or use a different username";return}
+    if ($TraverseSessionREST -and !$force) {
+        write-warning "You are already logged into Traverse (REST). Use the -force parameter if you want to connect to a different server or use a different username"
+        return
+    }
 
     #Log in using Credentials
-    $RESTLoginURI = "$TraverseProtocol$Hostname/api/rest/command/login?" + $Credential.GetNetworkCredential().UserName + "/" + $Credential.GetNetworkCredential().Password
-    
+    $RESTLoginURI = "$TraverseProtocol$Hostname/api/rest/command/login?" + $Credential.GetNetworkCredential().UserName +
+        "/" + $Credential.GetNetworkCredential().Password
+
     $RESTLoginResult = Invoke-RestMethod -sessionvariable TraverseSessionREST -Uri $RESTLoginURI
     if ($RESTLoginResult -notmatch "OK") {throw "The connection failed to $Hostname. Reason: $RESTLoginResult"}
 
@@ -64,7 +68,10 @@ if (!$NoREST) {
 #Create a JSON Session
 if (!$NoJSON) {
     #Check for existing session
-    if ($TraverseSessionJSON -and !$force) {write-warning "You are already logged into Traverse (JSON). Use the -force parameter if you want to connect to a different server or use a different username";return}
+    if ($TraverseSessionJSON -and !$force) {
+        write-warning "You are already logged into Traverse (JSON). Use the -force parameter if you want to connect to a different server or use a different username"
+        return
+    }
 
     #Log in using Credentials
     $JSONAPIPath = '/api/json/'
@@ -75,8 +82,19 @@ if (!$NoJSON) {
         password=$Credential.GetNetworkCredential().Password
     }
 
-    $SCRIPT:JSONLoginResult = Invoke-RestMethod -Method POST -Uri $JSONCommandURI -Body (ConvertTo-Json -compress $JSONBody) -ContentType 'application/json' -SessionVariable TraverseSessionJSON
-    if ($JSONLoginResult.success -ne "True") {throw "The connection failed to $Hostname. Reason: " + $JSONLoginResult.errorCode + ": " + $JSONLoginResult.errorMessage}
+    $JSONRestMethodParams = @{
+        Method = "POST"
+        ContentType = 'application/json'
+        URI = $JSONCommandURI
+        Body = (ConvertTo-Json -compress $JSONBody)
+        SessionVariable = "TraverseSessionJSON"
+    }
+
+    $SCRIPT:JSONLoginResult = Invoke-RestMethod @JSONRestMethodParams
+
+    if ($JSONLoginResult.success -ne "True") {
+        throw "The connection failed to $Hostname. Reason: " + $JSONLoginResult.errorCode + ": " +
+            $JSONLoginResult.errorMessage}
 
     #Workaround for SessionVariable parameter not allowing you to specify the scope
     #We need this to persist throughout the module lifetime
@@ -89,14 +107,11 @@ if (!$NoJSON) {
     #Return the login result if switch is set
     if ($PassThruJSON) {$JSONLoginResult}
 
-    #Set the session expiration (Refresh Interval Minus 5 minutes)
-    $SCRIPT:TraverseRefreshDateJSON = [DateTime]::Now.addminutes($JSONLoginResult.result.refreshInterval).addminutes(-5)
-
 } # if !$NoJSON
 
 #Create Web Services (SOAP) connection
 if (!$NoWS) {
-    if ($SCRIPT:TraverseSession -and !$force) {write-warning "You are already logged into Traverse (WS). Use the -force parameter if you want to connect to a different server or use a different username";return} 
+    if ($TraverseSession -and !$force) {write-warning "You are already logged into Traverse (WS). Use the -force parameter if you want to connect to a different server or use a different username";return}
 
     #Workaround for bug with new-webserviceproxy (http://www.sqlmusings.com/2012/02/04/resolving-ssrs-and-powershell-new-webserviceproxy-namespace-issue/)
     $TraverseBVELoginWS = (new-webserviceproxy -uri "$TraverseProtocol$Hostname/api/soap/login?wsdl" -ErrorAction stop)
@@ -111,7 +126,7 @@ if (!$NoWS) {
 
     if (!$loginResult.success) {throw "The connection failed to $Hostname. Reason: Error $($loginresult.errorcode) $($loginresult.errormessage)"}
 
-    set-variable -name TraverseSession -value $loginresult -scope Global
+    set-variable -name TraverseSession -value $loginresult -scope Script
     set-variable -name TraverseHostname -value $hostname -scope Global
     if (!$Quiet) {
         write-host -foreground green "Connected to $hostname BVE as $($loginrequest.username) using Web Services API"

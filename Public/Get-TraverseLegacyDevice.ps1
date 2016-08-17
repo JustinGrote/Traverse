@@ -22,8 +22,6 @@ TODO: Search Criteria
 
     $ListDevicesResult = $wsTraverseBVELegacyDevice.listdevices($listdevicesrequest)
 
-
-
     if ($ListDevicesResult.statuscode -ne 0) {
         throw "An Error Occured while retrieving Traverse Devices: $($ListDevicesResult.statusmessage)"
     } else {

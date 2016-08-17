@@ -18,9 +18,6 @@ Gets all tests from devices whos name contains the word "disk"
 Get-TraverseDevice "*dc*" | Get-TraverseTest -subtype ping
 Get all tests of type "ping" from the devices whos name contains the letters "dc"
 
-.EXAMPLE
-Get-TraverseDevice | Get-TraverseTest -
-
 #>
 
     [CmdletBinding(DefaultParameterSetName="testName")]
@@ -38,9 +35,9 @@ Get-TraverseDevice | Get-TraverseTest -
         #Filter by the test subtype (cpu, disk, pl, rtt, etc.)
         [String]$subType,
         #[SUPERUSER ONLY] Restrict scope of search to what the specified user can see
-        [String]$UserName,
+        [String]$RunAs,
         #Show the unencrypted cleartext password used for the test, if applicable
-        [Switch]$ShowPassword
+        [Switch]$ShowPWs
     ) # Param
 
     process {
@@ -55,10 +52,10 @@ Get-TraverseDevice | Get-TraverseTest -
                        }
             "testSerial" {$argumentList.testSerial = $testSerial}
         }
-        if ($UserName) {$argumentList.userName = $UserName}
+        if ($RunAs) {$argumentList.userName = $RunAs}
         if ($testType) {$argumentList.testType = $testType}
         if ($subType)  {$argumentList.subType = $subType}
-        if ($showPassword) {$argumentList.showPassword = 'true'}
+        if ($ShowPWs) {$argumentList.showPassword = 'true'}
 
         (Invoke-TraverseCommand test.list $argumentList -Verbose:($PSBoundParameters['Verbose'] -eq $true)).data.object
     }
