@@ -24,20 +24,20 @@ This command leverages the Traverse APIs to get the current status of a device.
 
             "deviceName" {
                 $argumentList.searchCriterias = @(@{
-                    SearchOption = "DEVICE_NAME"
-                    SearchTerms = $DeviceName -replace ' ','*'
+                    searchOption = "DEVICE_NAME"
+                    searchTerms = $DeviceName -replace ' ','*'
                 })
             }
             "testSerial" {
                 $argumentList.searchCriterias = @(@{
-                    SearchOption = "TEST_SERIAL_NUMBER"
-                    SearchTerms = $TestSerial
+                    searchOption = "TEST_SERIAL_NUMBER"
+                    searchTerms = [string]$TestSerial
                 })
 
             }
         }
 
-        (Invoke-TraverseCommand -API JSON "test/getStatuses" $argumentList -Verbose:($PSBoundParameters['Verbose'] -eq $true))
+        (Invoke-TraverseCommand -API JSON "test/getStatuses" $argumentList -Verbose:($PSBoundParameters['Verbose'] -eq $true)).tests
     }
 
 #endregion JSON
