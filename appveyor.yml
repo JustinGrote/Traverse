@@ -1,10 +1,22 @@
+version: 0.6.{build}-{branch}
 os: WMF 5
 
 install:
   - ps: Install-PackageProvider -Name nuget -MinimumVersion 2.8.5.201 -force
-  - ps: Install-Module pester -Scope CurrentUser -Force
- 
+  - ps: Install-Module pester -Repository PSGallery -Scope CurrentUser -Force
+
+# Skip on updates to the readme.
+# We can force this by adding [skip ci] or [ci skip] anywhere in commit message
+skip_commits:
+  message: /updated readme.*/
+
 build: false
 
 test_script:
-  - ps: . .\Tests\appveyor.pester.ps1 -Test -Finalize
+  - ps: ..\AppVeyor\AppVeyorTest.ps1 -Test -Finalize
+
+deploy_script:
+  - ps: ..\AppVeyor\AppVeyorDeploy.ps1
+  on:
+    branch: master
+    appveyor_repo_tag: true
