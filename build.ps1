@@ -1,4 +1,3 @@
-
 function Resolve-Module
 {
     [Cmdletbinding()]
