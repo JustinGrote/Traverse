@@ -1,22 +1,20 @@
-version: 0.6.{build}-{branch}
-os: WMF 5
+# See http://www.appveyor.com/docs/appveyor-yml for many more options
 
-install:
-  - ps: Install-PackageProvider -Name nuget -MinimumVersion 2.8.5.201 -force
-  - ps: Install-Module pester -Repository PSGallery -Scope CurrentUser -Force
+#Publish to PowerShell Gallery with this key
+environment:
+  NuGetApiKey:
+    secure: oqMFzG8F65K5l572V7VzlZIWU7xnSYDLtSXECJAAURrXe8M2+BAp9vHLT+1h1lR0
+
+# Allow WMF5 (i.e. PowerShellGallery functionality)
+os: WMF 5
 
 # Skip on updates to the readme.
 # We can force this by adding [skip ci] or [ci skip] anywhere in commit message
 skip_commits:
-  message: /updated readme.*/
+  message: /updated readme.*|update readme.*s/
 
 build: false
 
+#Kick off the CI/CD pipeline
 test_script:
-  - ps: ..\AppVeyor\AppVeyorTest.ps1 -Test -Finalize
-
-deploy_script:
-  - ps: ..\AppVeyor\AppVeyorDeploy.ps1
-  on:
-    branch: master
-    appveyor_repo_tag: true
+  - ps: . .\build.ps1
