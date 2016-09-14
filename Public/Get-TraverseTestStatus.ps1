@@ -37,7 +37,6 @@ This command leverages the Traverse APIs to get the current status of a device.
         }
 
         if ($status) {
-            #TODO: Abstract this to function
             $argumentlist.searchCriterias += @(@{
                 searchOption = "TEST_STATUS"
                 searchTerms = (Convert-TraverseStatus -status $status)
