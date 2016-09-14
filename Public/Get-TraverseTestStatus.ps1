@@ -5,6 +5,11 @@ Retrieves Traverse Test status based on specified criteria.
 
 .DESCRIPTION
 This command leverages the Traverse APIs to get the current status of a device.
+
+.EXAMPLES
+Get all tests with unknown devices
+Get-TraverseTestStatus -DeviceName * -status unknown
+
 #>
 
     [CmdletBinding(DefaultParameterSetName="deviceName")]
