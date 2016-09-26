@@ -44,10 +44,10 @@ Run the device.list command, and show only the resulting object output
 
     #Prep the command parameters based on the API being chosen
     switch ($API) {
-        'REST' { 
-            $APIPath = '/api/rest/command/' 
+        'REST' {
+            $APIPath = '/api/rest/command/'
             $Method = 'GET'
-            
+
             if ($ArgumentList -isnot [System.Collections.Hashtable]) {throw 'ArgumentList must be specified as a hashtable for REST commands'}
             $ArgumentList.format = "json"
 
@@ -57,20 +57,22 @@ Run the device.list command, and show only the resulting object output
             #Determine if we need to refresh the connection based on the timeout interval. Use a 5 second buffer to account for command latency
             if ($TraverseConnectRefreshDate -lt [DateTime]::Now) {
                 write-warning "JSON Refresh Timer Expired. Refreshing Login..."
-                connect-traversebve @TraverseConnectParams -Quiet -Force
+                if (!($TraverseConnectParams.Quiet)) {$TraverseConnectParams.Quiet = $true}
+                if (!($TraverseConnectParams.Quiet)) {$TraverseConnectParams.Force = $true}
+                connect-traversebve @TraverseConnectParams
             }
 
             $WebSession = $TraverseSessionREST
         }
-        'JSON' { 
-            $APIPath = '/api/json/' 
+        'JSON' {
+            $APIPath = '/api/json/'
             if (!($Get)) {
                 $Method = 'POST'
                 $ArgumentList = ConvertTo-Json -Compress $ArgumentList
             } else {
                 $Method = 'GET'
             }
-            
+
 
             #Ensure we have a connection
             if (!$TraverseSessionJSON) {throw 'You are not connected to a Traverse BVE system with JSON. Use Connect-TraverseBVE first'}

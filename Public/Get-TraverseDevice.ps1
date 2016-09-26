@@ -4,7 +4,7 @@ function Get-TraverseDevice {
 Retrieves Traverse Devices based on specified criteria.
 
 .DESCRIPTION
-This command leverages the Traverse APIs to gather information about devices in Traverse. 
+This command leverages the Traverse APIs to gather information about devices in Traverse.
 It retrieves all devices visible to the user by default if no parameters are specified.
 
 .PARAMETER Filter
@@ -66,51 +66,58 @@ Get devices that have at least one test defined with SQL in the name
 
     param (
         #Name of the device you want to retrieve. Regular expressions are supported.
-        [Parameter(Position=0,ParameterSetName="REST")][String]$DeviceName = '*',
+        [Parameter(Position=0,
+            ParameterSetName="REST",
+            ValueFromPipeline,
+            ValueFromPipelineByPropertyName)]
+            [String[]]$DeviceName = '*',
         #[SUPERUSER ONLY] Restrict scope of search to what the specified user can see
-        [Parameter(ParameterSetName="REST")][String]$UserName,
+        [Parameter(ParameterSetName="REST")][String]$RunAs,
         [Parameter(ParameterSetName="WS")][String]$Filter
     ) # Param
 
-    if ($PSCmdlet.ParameterSetName -eq "REST") {
-        $argumentList = @{}
-        $argumentList.deviceName = $DeviceName
-        if ($Username) {$argumentList.userName = $UserName}
+    process { foreach ($DeviceNameItem in $DeviceName) {
+        if ($PSCmdlet.ParameterSetName -eq "REST") {
+            $argumentList = @{}
+            #Replace spaces with wildcards to get around an API bug
+            #TODO: FixMe with a better solution
+            $argumentList.deviceName = $DeviceNameItem -replace ' ','*'
+            if ($RunAs) {$argumentList.userName = $RunAs}
 
-        (Invoke-TraverseCommand device.list $argumentList -Verbose:($PSBoundParameters['Verbose'] -eq $true)).data.object
-    } #If ParameterSet REST
+            (Invoke-TraverseCommand device.list $argumentList -Verbose:($PSBoundParameters['Verbose'] -eq $true)).data.object
+        } #If ParameterSet REST
 
-    if ($PSCmdlet.ParameterSetName -eq "WS") {
+        if ($PSCmdlet.ParameterSetName -eq "WS") {
 
-        #Exit if not connected
-        if (!$TraverseSession) {write-warning "You are not connected to a Traverse BVE system. Use Connect-TraverseBVE first";return}
+            #Exit if not connected
+            if (!$TraverseSession) {write-warning "You are not connected to a Traverse BVE system. Use Connect-TraverseBVE first";return}
 
-        #Connect to the Device Web Service
-        $TraverseBVEDeviceWS = (new-webserviceproxy -uri "$TraverseProtocol$TraverseHostname/api/soap/device?wsdl" -ErrorAction stop)
-        $TraverseBVEDeviceNS = $TraverseBVEDeviceWS.gettype().namespace
+            #Connect to the Device Web Service
+            $TraverseBVEDeviceWS = (new-webserviceproxy -uri "$TraverseProtocol$TraverseHostname/api/soap/device?wsdl" -ErrorAction stop)
+            $TraverseBVEDeviceNS = $TraverseBVEDeviceWS.gettype().namespace
 
-        #Create device request
-        $DeviceRequest = new-object ($TraverseBVEDeviceNS + '.deviceStatusesRequest')
-        $DeviceRequest.sessionid = $TraverseSession.result.sessionid
+            #Create device request
+            $DeviceRequest = new-object ($TraverseBVEDeviceNS + '.deviceStatusesRequest')
+            $DeviceRequest.sessionid = $TraverseSession.result.sessionid
 
-        #If Filter is specified, add a freeform search criteria object
-        if ($Filter) {
-            $SearchCriteria = new-object ($TraverseBVEDeviceNS + '.searchCriteria')
-            $SearchCriteria.searchOption = "FREEFORM"
-            $SearchCriteria.searchOptionSpecified = $true
-            $SearchCriteria.searchTerms = $Filter
-            $DeviceRequest.searchCriterias += $SearchCriteria
-        }
+            #If Filter is specified, add a freeform search criteria object
+            if ($Filter) {
+                $SearchCriteria = new-object ($TraverseBVEDeviceNS + '.searchCriteria')
+                $SearchCriteria.searchOption = "FREEFORM"
+                $SearchCriteria.searchOptionSpecified = $true
+                $SearchCriteria.searchTerms = $Filter
+                $DeviceRequest.searchCriterias += $SearchCriteria
+            }
 
-        $DeviceResult = $TraverseBVEDeviceWS.getStatuses($DeviceRequest)
+            $DeviceResult = $TraverseBVEDeviceWS.getStatuses($DeviceRequest)
 
-        if (!$DeviceResult.success) {throw "The connection failed to $TraverseHostname. Reason: Error $($DeviceResult.errorcode) $($DeviceResult.errormessage)"}
-        if ($DeviceResult.errorCodeSpecified) {write-warning "Get-TraverseDevice Search Error: $($DeviceResult.errorMessage)"}
+            if (!$DeviceResult.success) {throw "The connection failed to $TraverseHostname. Reason: Error $($DeviceResult.errorcode) $($DeviceResult.errormessage)"}
+            if ($DeviceResult.errorCodeSpecified) {write-warning "Get-TraverseDevice Search Error: $($DeviceResult.errorMessage)"}
 
-        return $DeviceResult.result.devices
+            return $DeviceResult.result.devices
 
-    } #If ParameterSetName WS
-
+        } #If ParameterSetName WS
+    }} #process #foreach
 } #Get-TraverseDevice
 
 

@@ -106,9 +106,8 @@ PrivateData = @{
         # A URL to an icon representing this module.
         IconUri = 'http://i.imgur.com/PZcQyZT.png'
 
-
         # ReleaseNotes of this module
-        # ReleaseNotes = ''
+        ReleaseNotes = ''
 
     } # End of PSData hashtable
 

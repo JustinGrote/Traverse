@@ -45,10 +45,10 @@ Get all tests of type "ping" from the devices whos name contains the letters "dc
         switch ($PSCmdlet.ParameterSetName) {
             "testName" {
                             $argumentList.testName = $Name
-                            if ($DeviceName) {$argumentList.deviceName = $DeviceName}
+                            if ($DeviceName) {$argumentList.deviceName = $DeviceName -replace ' ','*'}
                        }
             "deviceName" {
-                            $argumentList.deviceName = $DeviceName
+                            $argumentList.deviceName = $DeviceName -replace ' ','*'
                        }
             "testSerial" {$argumentList.testSerial = $testSerial}
         }

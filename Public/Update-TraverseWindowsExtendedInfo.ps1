@@ -16,7 +16,7 @@ Update all Systems for Customer "Contoso Corp"
 PS C:\> Update-TraverseWindowsExtendedInfo -TraverseAccountName "Contoso Corp"
 #>
 
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding()]
     param (
         [Parameter(ParameterSetName="ByDevice",ValueFromPipeline,ValueFromPipelineByPropertyName)][String]$DeviceName,
         [Parameter(ParameterSetName="ByAccountName")][String]$TraverseAccountName,
@@ -25,7 +25,7 @@ PS C:\> Update-TraverseWindowsExtendedInfo -TraverseAccountName "Contoso Corp"
     if ($TraverseAccountName) {
         $devices = Get-TraverseDevice | where {$_.accountname -eq $TraverseAccountName}
     } else {
-        $devices = $DeviceName
+        $devices = $DeviceName -replace ' ','*'
     }
     $windevices = $devices | where {$PSItem.devicetypestr -match "Windows Server"}
 
