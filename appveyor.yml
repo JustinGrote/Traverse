@@ -20,5 +20,6 @@ build: false
 test_script:
   - ps: . .\build.ps1
 
-deploy_script:
-  - ps: . .\CI\AppVeyorDeploy.ps1
+deploy:
+  deploy_script:
+    - ps: . .\CI\AppVeyorDeploy.ps1
