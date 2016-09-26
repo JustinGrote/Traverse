@@ -64,4 +64,9 @@ Task Build -Depends Test {
 
     # Bump the module version
     Update-Metadata -Path $env:BHPSModuleManifest -PropertyName ModuleVersion -Value (Get-NextPSGalleryVersion -Name (Get-ProjectName))
+
+    # Add Release Notes from current version
+    # TODO: Generate Release Notes from Github
+    Update-Metadata -Path $env:BHPSModuleManifest -PropertyName ReleaseNotes -Value ("$($env:APPVEYOR_REPO_COMMIT_MESSAGE): $($env:APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED)")
+
 }

@@ -14,9 +14,9 @@ os: WMF 5
 skip_commits:
   message: /updated readme.*|update readme.*s/
 
+#Kick off the CI/CD pipeline. We do test and build in the same script
+#To be portable to non-Appveyor builds
 build: false
-
-#Kick off the CI/CD pipeline
 test_script:
   - ps: . .\build.ps1
 
