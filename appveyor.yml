@@ -1,10 +1,29 @@
+# See http://www.appveyor.com/docs/appveyor-yml for many more options
+version: '{build}-{branch}'
+
+#Publish to PowerShell Gallery with this key
+environment:
+  NuGetApiKey:
+    secure: HncD30pn+cWRepdP28pyB1l4BNg3x3MdvcNV8EysOhQ5kBFMHVyXiQM0whuUW78P
+
+# Allow WMF5 (i.e. PowerShellGallery functionality)
 os: WMF 5
 
-install:
-  - ps: Install-PackageProvider -Name nuget -MinimumVersion 2.8.5.201 -force
-  - ps: Install-Module pester -Scope CurrentUser -Force
- 
-build: false
+# Skip on updates to the readme.
+# We can force this by adding [skip ci] or [ci skip] anywhere in commit message
+skip_commits:
+  message: /updated readme.*|update readme.*s/
 
+#Kick off the CI/CD pipeline. We do test and build in the same script
+#To be portable to non-Appveyor builds
+build: false
 test_script:
-  - ps: . .\Tests\appveyor.pester.ps1 -Test -Finalize
+  - ps: . .\build.ps1
+
+deploy: true
+
+deploy_script:
+    - ps: . .\CI\AppVeyorDeploy.ps1
+
+on_finish:
+  - ps: if ($env:APPVEYOR_REPO_COMMIT_MESSAGE -match 'TestDeploy') {$blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))}
