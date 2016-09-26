@@ -19,3 +19,6 @@ build: false
 #Kick off the CI/CD pipeline
 test_script:
   - ps: . .\build.ps1
+
+deploy_script:
+  - ps: . .\CI\AppVeyorDeploy.ps1
