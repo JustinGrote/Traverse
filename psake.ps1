@@ -65,14 +65,3 @@ Task Build -Depends Test {
     # Bump the module version
     Update-Metadata -Path $env:BHPSModuleManifest -PropertyName ModuleVersion -Value (Get-NextPSGalleryVersion -Name (Get-ProjectName))
 }
-
-Task Deploy -Depends Build {
-    $lines
-
-    $Params = @{
-        Path = $ProjectRoot
-        Force = $true
-        Recurse = $false # We keep psdeploy artifacts, avoid deploying those : )
-    }
-    Invoke-PSDeploy @Verbose @Params
-}
