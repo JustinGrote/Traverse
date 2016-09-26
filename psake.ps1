@@ -20,7 +20,7 @@ Properties {
     }
 }
 
-Task Default -Depends Deploy
+Task Default -Depends Build
 
 Task Init {
     $lines
@@ -64,9 +64,4 @@ Task Build -Depends Test {
 
     # Bump the module version
     Update-Metadata -Path $env:BHPSModuleManifest -PropertyName ModuleVersion -Value (Get-NextPSGalleryVersion -Name (Get-ProjectName))
-}
-
-Task Deploy -Depends Build {
-    $lines
-    echo "PSake: Ready to Deploy"
 }
