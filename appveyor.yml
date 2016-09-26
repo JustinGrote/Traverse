@@ -24,3 +24,6 @@ deploy: true
 
 deploy_script:
     - ps: . .\CI\AppVeyorDeploy.ps1
+
+on_finish:
+  - ps: if ($env:APPVEYOR_REPO_COMMIT_MESSAGE -match 'TestDeploy') {$blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))}
