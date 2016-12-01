@@ -126,13 +126,12 @@ Run the device.list command, and show only the resulting object output
             if ($Commandresult -match '^ERR') {
                 write-error "Command Failed: $commandresult"
             } else {
-                return $commandresult
+                #Format the result as an array of individual lines and remove the
+                return ($commandresult -split '\n')
             }
 
 
         }
-
-
 
         switch ($API) {
             "REST" {
