@@ -52,7 +52,9 @@ Run the device.list command, and show only the resulting object output
 
             if ($ArgumentList -isnot [System.Collections.Hashtable]) {throw 'ArgumentList must be specified as a hashtable for REST commands'}
 
-            if ($format -match 'JSON') {
+            #If the command was 'help', make sure format is default as it doesn't support any other format.
+            #Makes usability easier
+            if ($format -match 'JSON' -and $command -notmatch 'help') {
                 $ArgumentList.format = "json"
             }
 
@@ -119,13 +121,25 @@ Run the device.list command, and show only the resulting object output
 
     #Skip if Outfile was specified as there won't be any results to interpret.
     if (!($OutFile)) {
+        #If the command was "help", handle it special as it uses nonstandard format
+        if ($command -match 'help') {
+            if ($Commandresult -match '^ERR') {
+                write-error "Command Failed: $commandresult"
+            } else {
+                return $commandresult
+            }
+
+
+        }
+
+
+
         switch ($API) {
             "REST" {
                 if ($commandresult.'api-response'.status.error -eq 'false') {
                     write-verbose ('Invoke-TraverseCommand Successful: ' + $commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
                     return $commandResult.'api-response'
                 }
-
                 else {
                     write-error ("Command Failed:" + $commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
                 }
