@@ -30,6 +30,8 @@ Run the device.list command, and show only the resulting object output
         [Parameter(Position=1)]$ArgumentList = @{},
         #Specifies whether this is a REST (FlexAPI) or JSON command. Default is REST (FlexAPI)
         [ValidateSet('REST','JSON')][String]$API = 'REST',
+        #Specifies the format to use for output. Currently this only supports "Default" and "JSON"
+        [ValidateSet('Default','JSON')][String]$Format = 'JSON',
         #Perform a "GET" instead of a "POST" with the JSON API
         [Switch]$Get,
         #Direct the output to a file
@@ -49,7 +51,10 @@ Run the device.list command, and show only the resulting object output
             $Method = 'GET'
 
             if ($ArgumentList -isnot [System.Collections.Hashtable]) {throw 'ArgumentList must be specified as a hashtable for REST commands'}
-            $ArgumentList.format = "json"
+
+            if ($format -match 'JSON') {
+                $ArgumentList.format = "json"
+            }
 
             #Ensure we have a connection
             if (!$TraverseSessionREST) {throw 'You are not connected to a Traverse BVE system with REST. Use Connect-TraverseBVE first'}
