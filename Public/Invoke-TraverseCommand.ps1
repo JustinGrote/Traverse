@@ -19,7 +19,6 @@ Run the device.list command, and show only the resulting object output
 (Invoke-TraverseCommand 'device.list').data.object
 Run the device.list command, and show only the resulting object output
 
-
 #>
 
     [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName="SessionID")]
