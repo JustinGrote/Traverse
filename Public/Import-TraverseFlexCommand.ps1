@@ -37,6 +37,6 @@ function $($cmdItem.verb)-$($cmdItem.noun) {
         $cmdList += $command
     }
     #TODO: Randomly generate path
-    $cmdList > $env:temp\TraverseFlexCommands.psm1
-    import-module $env:temp\TraverseFlexCommands.psm1 -verbose -force -prefix $prefix
+    $cmdList > $env:temp\$prefix`.psm1
+    import-module $env:temp\$prefix`.psm1 -prefix $prefix
 }
