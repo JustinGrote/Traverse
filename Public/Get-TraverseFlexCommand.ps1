@@ -10,7 +10,6 @@ Generates Powershell Commands from the Traverse FlexAPI
 
     $HelpResult = invoke-traversecommand "help"
 
-#First Pass: Parse the text definition into rough objects
     $HelpResult | where {$PSItem -notmatch '^End with .quit*'} | foreach {
 
         #Initialize special matches variable just in case
@@ -77,7 +76,6 @@ Generates Powershell Commands from the Traverse FlexAPI
                     $roughParams += $cmdParam
                 }
 
-
                 #TODO: If a parameter doesn't have brackets and is a constant value, it should be configured as a switch with its own parameter set
             }
 
@@ -115,12 +113,5 @@ Generates Powershell Commands from the Traverse FlexAPI
         }
 
         [PSCustomObject]$cmdParts
-
-<# TODO: Convert to PSObject
-        [pscustomobject][ordered]@{
-            Verb = ($_ -replace '^[a-zA-Z]*?[\.]([a-zA-Z]*?)[$ ].*','$1')
-            Noun = ($_ -replace '(^[a-zA-Z]*?)[\. ].*','$1')
-        }
-#>
     }
 }
