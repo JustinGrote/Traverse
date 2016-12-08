@@ -23,6 +23,10 @@ Documentation for all commands can be found at the Traverse Developers Guide, bu
         $verb = $cmdItem.verb
         $command = @"
 function $($cmdItem.verb)-$($cmdItem.noun) {
+    <#
+    .SYNOPSIS
+    This is a generated command for the FlexAPI command $noun.$verb
+    #>
     param ()
     `$result = Invoke-TraverseCommand -Command $noun.$verb
     if (`$result.data.object) {
