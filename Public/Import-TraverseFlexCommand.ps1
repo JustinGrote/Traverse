@@ -15,7 +15,7 @@ Documentation for all commands can be found at the Traverse Developers Guide, bu
 
     $commands = Get-TraverseFlexCommand | where {$_.noun}
 
-    #Exclude Create Test and Update Test for now as they require special formatting
+    #Exclude Create Test and Update Test for now as they require special formatting since they have multiple entries
     #TODO: Add special formatting for Create/Update Test
     $commands = $commands | where {$PSItem.noun -notlike "Test" -and $PSItem.verb -notmatch 'Create|Update'}
 
