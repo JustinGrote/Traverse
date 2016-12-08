@@ -49,7 +49,8 @@ Run the device.list command, and show only the resulting object output
             $APIPath = '/api/rest/command/'
             $Method = 'GET'
 
-            if ($ArgumentList -isnot [System.Collections.Hashtable]) {throw 'ArgumentList must be specified as a hashtable for REST commands'}
+            #Disabled for dynamic generation compatability
+            #if ($ArgumentList -isnot [System.Collections.Hashtable]) {throw 'ArgumentList must be specified as a hashtable for REST commands'}
 
             #If the command was 'help', make sure format is default as it doesn't support any other format.
             #Makes usability easier
