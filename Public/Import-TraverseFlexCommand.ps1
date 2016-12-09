@@ -19,9 +19,16 @@ Documentation for all commands can be found at the Traverse Developers Guide, bu
 
     $commands = Get-TraverseFlexCommand | where {$_.noun}
 
-    #Exclude Create Test and Update Test for now as they require special formatting since they have multiple entries
-    #TODO: Add special formatting for Create/Update Test
-    $commands = $commands | where {$PSItem.noun -notlike "Test" -and $PSItem.verb -notmatch 'Create|Update'}
+    #Exclude items that have bad formatting or otherwise require special formatting
+    #TODO: Fix these functions
+
+    $commands = $commands | where {
+        "TestCreate",
+        "TestUpdate",
+        "TestSuppress",
+        "ActionCreate",
+        "ActionUpdate",
+        "HotSpotUpdate" -notcontains ($PSItem.noun + $PSItem.verb)}
 
     $cmdlist = ""
 
@@ -90,10 +97,11 @@ function $PShellVerb-$PShellNoun {
 
     #Execute the Command
     `$result = Invoke-TraverseCommand -Verbose -Command $noun.$verb -ArgumentList `$traverseCommandParameters
+    #TODO: Move this formatting into Invoke-TraverseCommand, it belongs there.
     if (`$result.data.object) {
         `$result.data.object
     } else {
-        `$result
+        `$result.status
     }
 }
 
