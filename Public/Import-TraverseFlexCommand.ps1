@@ -97,7 +97,7 @@ function $PShellVerb-$PShellNoun {
     }
 
     #Execute the Command
-    `$result = Invoke-TraverseCommand -Verbose -Command $noun.$verb -ArgumentList `$traverseCommandParameters
+    `$result = Invoke-TraverseCommand -Command $noun.$verb -ArgumentList `$traverseCommandParameters
     #TODO: Move this formatting into Invoke-TraverseCommand, it belongs there.
     if (`$result.data.object) {
         `$result.data.object
@@ -118,7 +118,7 @@ function $PShellVerb-$PShellNoun {
     import-module $flexModulePath -prefix $prefix -global
     if (!$NoCreateAliases) {
         foreach ($cmdlet in (get-command -module $prefix | sort Name)) {
-            #Find a shortname that is available and not already used, up to 4 characters
+            #Find a shortname alias that is available and not already used, up to 4 characters
             $aliasParams = @{
                 Name = $null
                 Value = $cmdlet.Name
