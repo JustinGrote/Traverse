@@ -41,6 +41,7 @@ Documentation for all commands can be found at the Traverse Developers Guide, bu
         $PShellVerb = switch ($verb) {
             "List" {"Get"}
             "Create" {"New"}
+            "Update" {"Set"}
             "Delete" {"Remove"}
             "Status" {"Get"; $PShellNoun = $PShellNoun + "Status"}
             "Members" {"Get"; $PShellNoun = $PShellNoun + "Members"}
