@@ -23,7 +23,7 @@ process {
         ArgumentList=@{}
     }
 
-    (Invoke-TraverseCommand -Command 'Container.list' @TraverseCommandParams).data.object 
+    Invoke-TraverseCommand -Command 'Container.list' @TraverseCommandParams
 }
 
 #endregion Main
