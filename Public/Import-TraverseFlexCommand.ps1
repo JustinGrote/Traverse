@@ -33,6 +33,7 @@ Documentation for all commands can be found at the Traverse Developers Guide, bu
         "HotSpotUpdate" -notcontains ($PSItem.noun + $PSItem.verb)}
 
     $cmdlist = ""
+    $aliases = @{}
 
     #Generate Function Code for the various commands
     foreach ($cmdItem in $commands) {
@@ -124,6 +125,7 @@ function $PShellVerb-$PShellNoun {
         #invoke-expression $command
 
         $cmdList += $command
+        $aliases.Add($cmdItem.command.tolower(),"$PShellVerb-$Prefix$PShellNoun")
     }
     #Add the export command so that Aliases get added in addition to functions
     $cmdList += @"
@@ -168,6 +170,7 @@ export-modulemember -Function *
     }
 
     If (!$NoCreateBVECLIAliases) {
+        <# OLD METHOD: Get-Help was was too slow
         foreach ($cmdlet in (get-command -module $prefix | sort Name)) {
             #Use the FlexAPI Command Note in the help to generate the aliases.
             $flexAPICommand = (get-help $cmdlet.Name).synopsis -replace '^.*?Traverse FlexAPI command ([a-zA-Z\.]*).*$','$1'
@@ -178,6 +181,12 @@ export-modulemember -Function *
                 $finalAliasPrefix = $AliasPrefix
             }
             Set-Alias -Name ($finalAliasPrefix + $flexAPICommand.tolower()) -Value $cmdlet.Name -scope Global
+        }
+        #>
+
+        #TODO: Fix for prefixes
+        foreach ($aliasItem in $aliases.GetEnumerator()) {
+            Set-Alias -Name $aliasItem.Name -Value $aliasItem.Value -Scope Global
         }
     }
 }
