@@ -133,6 +133,7 @@ export-modulemember -Function *
     New-Item -type Directory (Split-Path -Parent $flexModulePath) | out-null
     remove-item  $flexModulePath -ErrorAction SilentlyContinue
     $cmdList > $flexModulePath
+    if (get-module $prefix) {throw "Module $prefix is already loaded. Either remove the module or specify a different module prefix"}
     import-module $flexModulePath -prefix $prefix -global -NoClobber
 
 
