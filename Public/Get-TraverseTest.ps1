@@ -57,6 +57,6 @@ Get all tests of type "ping" from the devices whos name contains the letters "dc
         if ($subType)  {$argumentList.subType = $subType}
         if ($ShowPWs) {$argumentList.showPassword = 'true'}
 
-        (Invoke-TraverseCommand test.list $argumentList -Verbose:($PSBoundParameters['Verbose'] -eq $true)).data.object
+        Invoke-TraverseCommand test.list $argumentList -Verbose:($PSBoundParameters['Verbose'] -eq $true)
     }
 } #Get-TraverseDevice

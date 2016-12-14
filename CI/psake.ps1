@@ -68,5 +68,4 @@ Task Build -Depends Test {
     # Add Release Notes from current version
     # TODO: Generate Release Notes from Github
     Update-Metadata -Path $env:BHPSModuleManifest -PropertyName ReleaseNotes -Value ("$($env:APPVEYOR_REPO_COMMIT_MESSAGE): $($env:APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED)")
-
 }
