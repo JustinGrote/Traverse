@@ -18,11 +18,13 @@ Generates Powershell Commands from the Traverse FlexAPI
         #Parse out the various inital elements of the command
         #Initialize the hashtable so that PSCustomObject doesn't mess it up later
         $cmdParts = [ordered]@{
+            #Get the original command, used later for aliasing
+            command = $PSItem -replace '^([a-z\.A-Z]*?) .*','$1'
             noun = $null
             verb = $null
             params = $null
         }
-        if ($PSItem -match '^(?<noun>[a-zA-z]*)\.?(?<verb>[a-zA-Z]*)\ (?<params>.*)') {
+        if ($PSItem -match '^(?<noun>[a-zA-Z]*)\.?(?<verb>[a-zA-Z]*)\ (?<params>.*)') {
             #Save Matches result in case it changes due to processing or matching I do later
             $cmdMatches = $Matches
 
@@ -32,6 +34,7 @@ Generates Powershell Commands from the Traverse FlexAPI
             if ($cmdMatches['verb']) {
                 #Capitalize first letter using TextInfo to meet Powershell Guidelines
                 $cmdParts.verb = $TextInfo.ToTitleCase($cmdMatches['verb']).trim()
+
             } else {
                 #Default to "Invoke" if no verb was found
                 $cmdParts.verb = 'Invoke'
@@ -43,11 +46,12 @@ Generates Powershell Commands from the Traverse FlexAPI
             $roughParams = @()
             $cmdMatches['params'] -split ', ' | foreach {
                 $paramString = $PSItem.trim()
-                $cmdParam = [ordered]@{
+                $cmdParam = @{
                     name = $null
                     mandatory = $null
                     type = $null
-                    validateset = $null
+                    validate = $null
+                    parameterSet = $null
                     argument = $null
                 }
 
@@ -65,15 +69,24 @@ Generates Powershell Commands from the Traverse FlexAPI
                 #Unfortunately | is used inside of arguments so we can't just do a simple split, hence the fancy regex
                 if ($paramstring -match '^(\".*?=.*?\") \| (\".*?=.*?\")$' ) {
                     $result = $matches.remove(0)
-                    $matches.values | foreach {
-                        $roughParams += [ordered]@{
-                            argument = $PSItem.trim()
-                            mandatory = $cmdParam.mandatory
+                    $i=1
+                    #Create a new cmdParam object using the existing as a baseline
+                    #The keys need to be sorted so the parameters are processed in the correct order.
+                    #This is important for positional parameters
+                    $matches.keys | sort | foreach {$matches[$_]} | foreach {
+                        #DOESNT WORK WITH [ordered]
+                        $cmdParamNew = $cmdParam.Clone()
+                        $cmdParamNew.argument = $PSItem.trim()
+                        if ($cmdParamNew.mandatory) {
+                            $cmdParamNew.parameterSet = "Set$i"
+                            $i++
                         }
+                        $roughParams += $cmdParamNew
                     }
                 } else {
-                    $cmdParam.argument = $paramString.trim()
-                    $roughParams += $cmdParam
+                    $cmdParamNew = $cmdParam.Clone()
+                    $cmdParamNew.argument = $paramString.trim()
+                    $roughParams += $cmdParamNew
                 }
 
                 #TODO: If a parameter doesn't have brackets and is a constant value, it should be configured as a switch with its own parameter set
