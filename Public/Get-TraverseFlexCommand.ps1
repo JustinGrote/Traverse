@@ -110,13 +110,18 @@ Generates Powershell Commands from the Traverse FlexAPI
                     switch -regex ($argTypeDef) {
                         #If it has multiple specific params, save them for defining for validationSet later
                         #TODO: Define ValidationSet
+                        "true\|false" {
+                                $roughParamItem.type = 'Boolean'
+                                continue
+                        }
                         "\|" {
                                 $roughParamItem.type = 'String'
                                 $roughParamItem.validateSet = $argTypeDef.split('|')
+                                continue
                         }
-                        "^value$" {$roughParamItem.type = 'String'}
-                        "^regexp$" {$roughParamItem.type = 'Regex'}
-                        default {$roughParamItem.type = 'String'}
+                        "^value$" {$roughParamItem.type = 'String'; continue}
+                        "^regexp$" {$roughParamItem.type = 'Regex'; continue}
+                        default {$roughParamItem.type = 'String'; continue}
                     }
                 }
                 $finalParams += [PSCustomObject]$roughParamItem

@@ -12,11 +12,11 @@ Most of the commands in the Traverse module use this command as the foundation t
 Modeled after Native Powershell functions Invoke-Command and Invoke-Expression.
 
 .EXAMPLE
-(Invoke-TraverseCommand 'device.list').data.object
-Run the device.list command, and show only the resulting object output
+Invoke-TraverseCommand 'device.list'
+Run the device.list command
 
 .EXAMPLE
-(Invoke-TraverseCommand 'device.list').data.object
+Invoke-TraverseCommand 'device.list'
 Run the device.list command, and show only the resulting object output
 
 #>
@@ -106,7 +106,12 @@ Run the device.list command, and show only the resulting object output
         $RESTCommand.Add("OutFile",$OutFile)
     }
 
-    if (!($PSCmdlet.ShouldProcess($RESTCommand.URI,"Invoke $API Command"))) {return}
+    if (!($PSCmdlet.ShouldProcess(
+        $RESTCommand.URI,
+        "Invoke $API Command with Args $(Convert-HashtoString $RESTCommand.body)"))) {
+            return
+    }
+
     $commandResult = Invoke-RestMethod @RESTCommand
 
     #BUGFIX: Work around a bug in ConvertFrom-JSON where it doesn't parse blank entries even if it is valid JSON. Example: {""=""}
@@ -126,7 +131,7 @@ Run the device.list command, and show only the resulting object output
             if ($Commandresult -match '^ERR') {
                 write-error "Command Failed: $commandresult"
             } else {
-                #Format the result as an array of individual lines and remove the
+                #Format the result as an array of individual lines and return that.
                 return ($commandresult -split '\n')
             }
 
@@ -137,7 +142,7 @@ Run the device.list command, and show only the resulting object output
             "REST" {
                 if ($commandresult.'api-response'.status.error -eq 'false') {
                     write-verbose ('Invoke-TraverseCommand Successful: ' + $commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
-                    return $commandResult.'api-response'
+                    return $commandResult.'api-response'.data.object
                 }
                 else {
                     write-error ("Command Failed:" + $commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
