@@ -12,13 +12,12 @@ Most of the commands in the Traverse module use this command as the foundation t
 Modeled after Native Powershell functions Invoke-Command and Invoke-Expression.
 
 .EXAMPLE
-(Invoke-TraverseCommand 'device.list').data.object
-Run the device.list command, and show only the resulting object output
+Invoke-TraverseCommand 'device.list'
+Run the device.list command
 
 .EXAMPLE
-(Invoke-TraverseCommand 'device.list').data.object
+Invoke-TraverseCommand 'device.list'
 Run the device.list command, and show only the resulting object output
-
 
 #>
 
@@ -30,6 +29,8 @@ Run the device.list command, and show only the resulting object output
         [Parameter(Position=1)]$ArgumentList = @{},
         #Specifies whether this is a REST (FlexAPI) or JSON command. Default is REST (FlexAPI)
         [ValidateSet('REST','JSON')][String]$API = 'REST',
+        #Specifies the format to use for output. Currently this only supports "Default" and "JSON"
+        [ValidateSet('Default','JSON')][String]$Format = 'JSON',
         #Perform a "GET" instead of a "POST" with the JSON API
         [Switch]$Get,
         #Direct the output to a file
@@ -48,8 +49,14 @@ Run the device.list command, and show only the resulting object output
             $APIPath = '/api/rest/command/'
             $Method = 'GET'
 
-            if ($ArgumentList -isnot [System.Collections.Hashtable]) {throw 'ArgumentList must be specified as a hashtable for REST commands'}
-            $ArgumentList.format = "json"
+            #Disabled for dynamic generation compatability
+            #if ($ArgumentList -isnot [System.Collections.Hashtable]) {throw 'ArgumentList must be specified as a hashtable for REST commands'}
+
+            #If the command was 'help', make sure format is default as it doesn't support any other format.
+            #Makes usability easier
+            if ($format -match 'JSON' -and $command -notmatch 'help') {
+                $ArgumentList.format = "json"
+            }
 
             #Ensure we have a connection
             if (!$TraverseSessionREST) {throw 'You are not connected to a Traverse BVE system with REST. Use Connect-TraverseBVE first'}
@@ -99,7 +106,12 @@ Run the device.list command, and show only the resulting object output
         $RESTCommand.Add("OutFile",$OutFile)
     }
 
-    if (!($PSCmdlet.ShouldProcess($RESTCommand.URI,"Invoke $API Command"))) {return}
+    if (!($PSCmdlet.ShouldProcess(
+        $RESTCommand.URI,
+        "Invoke $API Command with Args $(Convert-HashtoString $RESTCommand.body)"))) {
+            return
+    }
+
     $commandResult = Invoke-RestMethod @RESTCommand
 
     #BUGFIX: Work around a bug in ConvertFrom-JSON where it doesn't parse blank entries even if it is valid JSON. Example: {""=""}
@@ -114,13 +126,24 @@ Run the device.list command, and show only the resulting object output
 
     #Skip if Outfile was specified as there won't be any results to interpret.
     if (!($OutFile)) {
+        #If the command was "help", handle it special as it uses nonstandard format
+        if ($command -match 'help') {
+            if ($Commandresult -match '^ERR') {
+                write-error "Command Failed: $commandresult"
+            } else {
+                #Format the result as an array of individual lines and return that.
+                return ($commandresult -split '\n')
+            }
+
+
+        }
+
         switch ($API) {
             "REST" {
                 if ($commandresult.'api-response'.status.error -eq 'false') {
                     write-verbose ('Invoke-TraverseCommand Successful: ' + $commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
-                    return $commandResult.'api-response'
+                    return $commandResult.'api-response'.data.object
                 }
-
                 else {
                     write-error ("Command Failed:" + $commandResult.'api-response'.status.code + ' ' + $commandResult.'api-response'.status.message)
                 }

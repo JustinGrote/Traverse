@@ -8,14 +8,6 @@
             "program": "${file}",
             "args": [],
             "cwd": "${file}"
-        },
-        {
-            "name": "PowerShell x86",
-            "type": "PowerShell x86",
-            "request": "launch",
-            "program": "${file}",
-            "args": [],
-            "cwd": "${file}"
         }
     ]
 }
