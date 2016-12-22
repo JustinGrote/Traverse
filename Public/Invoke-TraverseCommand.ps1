@@ -108,8 +108,9 @@ Run the device.list command, and show only the resulting object output
 
     if (!($PSCmdlet.ShouldProcess(
         $RESTCommand.URI,
-        "Invoke $API Command with Args $(Convert-HashtoString $RESTCommand.body)"))) {
-            return
+        "Invoke $API Command with Args $(Convert-HashtoString -ErrorAction SilentlyContinue $RESTCommand.body)"
+        ))) {
+            return;
     }
 
     $commandResult = Invoke-RestMethod @RESTCommand

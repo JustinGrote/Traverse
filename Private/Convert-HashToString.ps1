@@ -1,5 +1,6 @@
 function Convert-HashToString
 {
+    [CmdletBinding()]
     param
     (
         [Parameter(Mandatory = $true)]
