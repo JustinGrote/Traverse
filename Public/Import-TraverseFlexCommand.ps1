@@ -65,7 +65,7 @@ Documentation for all commands can be found at the Traverse Developers Guide, bu
             $paramAttributes += ")]"
             $PShellParams += switch ($param.type) {
                 "String" {$paramAttributes + "[String]`$$($param.name)`r`n"}
-                "RegEx" {$paramAttributes + "[Regex]`$$($param.name)`r`n"}
+                "RegEx" {$paramAttributes + "[String]`$$($param.name)`r`n"}
                 "Boolean" {$paramAttributes + "[Switch]`$$($param.name)`r`n"}
                 default {$paramAttributes + "[String]`$$($param.name)`r`n"}
             }
@@ -140,7 +140,7 @@ export-modulemember -Function *
 
 
     If (!$NoCreateAliases) {
-        foreach ($cmdlet in (get-command -module $prefix | sort Name)) {
+        foreach ($cmdlet in (get-command -module $prefix | sort-Object Name)) {
             #Find a shortname alias that is available and not already used, up to 4 characters
             $aliasParams = @{
                 Name = $null
