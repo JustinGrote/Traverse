@@ -18,7 +18,7 @@ $RECYCLE.BIN/
 *.lnk
 
 #VSCode Internal Files
-.vscode
+.vscode/*
 
 #Internal Files
 Public/Get-TraverseTemplate.txt
