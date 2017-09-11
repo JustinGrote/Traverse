@@ -122,8 +122,6 @@ function $PShellVerb-$PShellNoun {
 
 "@
 
-        #invoke-expression $command
-
         $cmdList += $command
         $aliases.Add($cmdItem.command.tolower(),"$PShellVerb-$Prefix$PShellNoun")
     }
@@ -170,20 +168,6 @@ export-modulemember -Function *
     }
 
     If (!$NoCreateBVECLIAliases) {
-        <# OLD METHOD: Get-Help was was too slow
-        foreach ($cmdlet in (get-command -module $prefix | sort Name)) {
-            #Use the FlexAPI Command Note in the help to generate the aliases.
-            $flexAPICommand = (get-help $cmdlet.Name).synopsis -replace '^.*?Traverse FlexAPI command ([a-zA-Z\.]*).*$','$1'
-            #If using the default TraverseFlex alias, then don't prefix.
-            if ($AliasPrefix -match 'tf') {
-                $finalAliasPrefix = ""
-            } else {
-                $finalAliasPrefix = $AliasPrefix
-            }
-            Set-Alias -Name ($finalAliasPrefix + $flexAPICommand.tolower()) -Value $cmdlet.Name -scope Global
-        }
-        #>
-
         #TODO: Fix for prefixes
         foreach ($aliasItem in $aliases.GetEnumerator()) {
             Set-Alias -Name $aliasItem.Name -Value $aliasItem.Value -Scope Global
