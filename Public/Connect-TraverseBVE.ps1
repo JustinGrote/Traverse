@@ -34,8 +34,9 @@ param (
     [Switch]$PassThruWS
 ) # Param
 
-#Specify the connectivity protocol
+#Specify the connectivity protocol and hostname
 if ($NoSSL) {$SCRIPT:TraverseProtocol = "http://"} else {$SCRIPT:TraverseProtocol = "https://"}
+set-variable -name TraverseHostname -value $hostname -scope Script
 
 #Create a REST Session
 if (!$NoREST) {
@@ -127,7 +128,7 @@ if (!$NoWS) {
     if (!$loginResult.success) {throw "The connection failed to $Hostname. Reason: Error $($loginresult.errorcode) $($loginresult.errormessage)"}
 
     set-variable -name TraverseSession -value $loginresult -scope Script
-    set-variable -name TraverseHostname -value $hostname -scope Global
+    set-variable -name TraverseHostname -value $hostname -scope Script
     if (!$Quiet) {
         write-host -foreground green "Connected to $hostname BVE as $($loginrequest.username) using Web Services API"
     }
