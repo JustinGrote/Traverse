@@ -1,0 +1,38 @@
+function Get-Traverse<<REPLACEME>> {
+<#
+.SYNOPSIS
+Retrieves the <<UPDATEME>>
+
+.DESCRIPTION
+<<UPDATEME>>
+
+.NOTES
+
+.EXAMPLE
+<<UPDATEME>>
+
+#>
+
+[CmdletBinding()]
+param (
+#Serial Number of the Department
+
+
+) # Param
+
+#region Main
+process {
+    $TraverseCommandParams = @{
+        API="JSON"
+        Verbose=($PSBoundParameters['Verbose'] -eq $true)
+        ArgumentList=@{}
+    }
+
+   (Invoke-TraverseCommand -Command '<<MYCOMMAND>>' @TraverseCommandParams).configAccounts.monitorConfigs
+}
+
+#endregion Main
+
+} #Get-Traverse<<REPLACEME>>
+
+
