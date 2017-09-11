@@ -52,7 +52,7 @@ if (!$NoREST) {
     $SCRIPT:TraverseSessionREST = $TraverseSessionREST
 
     if (!$Quiet) {
-        write-host -foreground green "Connected to $Hostname BVE as $($Credential.GetNetworkCredential().Username) using REST API"
+        write-verbose "Connected to $Hostname BVE as $($Credential.GetNetworkCredential().Username) using REST API"
     }
 
     #Return the login session if switch is set
@@ -96,7 +96,7 @@ if (!$NoJSON) {
     $SCRIPT:TraverseSessionJSON = $TraverseSessionJSON
 
     if (!$Quiet) {
-        write-host -foreground green "Connected to $Hostname BVE as $($Credential.GetNetworkCredential().Username) using JSON API"
+        write-verbose "Connected to $Hostname BVE as $($Credential.GetNetworkCredential().Username) using JSON API"
     }
 
     #Return the login result if switch is set
