@@ -6,6 +6,8 @@ This module provides a Powershell interface for the [Kaseya Traverse](http://tra
 
 This project is **first and foremost** a way to teach myself to build a Powershell module using the latest best practices, conventions, and modern continuous integration processes. As such, I accept pull requests but I'm not likely to address any outstanding issues or missing features that don't directly correlate with my own needs.
 
+The first revision was done with manually writing the command equivalents. The new 2.0 version is now automatically generated from the API help information, and then additional functionality for each command is layered on via [proxy functions](https://blogs.technet.microsoft.com/heyscriptingguy/2011/03/01/proxy-functions-spice-up-your-powershell-core-cmdlets/).
+
 Installation
 -
 ####[Powershell V5](https://www.microsoft.com/en-us/download/details.aspx?id=50395) and Later
