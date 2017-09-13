@@ -7,6 +7,5 @@ if($env:APPVEYOR_REPO_BRANCH -and $env:APPVEYOR_REPO_BRANCH -notmatch 'master')
     exit
 } elseif ($env:APPVEYOR_REPO_TAG_NAME -match 'v\d') {
     write-host -ForegroundColor yellow "DEPLOY PHASE: Publishing to Powershell Gallery"
-    $env:NuGetAPIKey > C:\projects\apikey.txt
     Publish-Module -Name (Get-ProjectName) -NuGetApiKey $env:NuGetAPIKey
 }
