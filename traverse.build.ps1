@@ -34,6 +34,11 @@ Enter-Build {
     "Build Environment Prepared! Environment Information:"
     Get-BuildEnvironment
 
+    #
+    if ($env:BHBuildSystem -eq 'AppVeyor') {
+    "Detected that we are running in Appveyor! AppVeyor Environment Information:"
+        get-item env:/Appveyor*
+    }
     #Move to the Project Directory if we aren't there already
     Set-Location $env:BHProjectPath
     

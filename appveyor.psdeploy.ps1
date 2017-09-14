@@ -1,7 +1,8 @@
 # Upload Appveyor Artifacts if we're in AppVeyor
 "Starting PSDeploy Appveyor Section"
 if(
-    $env:BHProjectName -and $ENV:BHProjectName.Count -eq 1 -and
+    $env:BHProjectName -and 
+    $ENV:BHProjectName.Count -eq 1 -and
     $env:BHBuildSystem -eq 'AppVeyor'
 )
 {
