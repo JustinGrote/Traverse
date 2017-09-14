@@ -28,7 +28,7 @@ Enter-Build {
 
     Resolve-Module $BuildHelperModules
 
-    Set-BuildEnvironment -buildoutput 'Release' -force
+    Set-BuildEnvironment -force
     $Timestamp = Get-date -uformat "%Y%m%d-%H%M%S"
     $PSVersion = $PSVersionTable.PSVersion.Major
     "Build Environment Prepared! Environment Information:"
@@ -36,9 +36,12 @@ Enter-Build {
 
     #Move to the Project Directory if we aren't there already
     Set-Location $env:BHProjectPath
+    
+    $Script:ProjectBuildPath = $env:BHBuildOutput + "\" + $env:BHProjectName
 
-    #Create BuildOutput Directory if it doesn't already exist
-    if (!(test-path $env:BHBuildOutput)) {New-Item -ItemType Directory $env:BHBuildOutput}
+    #Reset the BuildOutput Directory
+    if (test-path $ProjectBuildPath)  {remove-item $ProjectBuildPath -Recurse -Force}
+    New-Item -ItemType Directory $ProjectBuildPath -force -verbose
 }
 
 task Version {
@@ -70,18 +73,24 @@ task Version {
     #Calcuate the GitVersion
     $GitVersionInfo = iex "$GitVersionEXE $env:BHProjectPath" | ConvertFrom-JSON
     $Script:ProjectBuildVersion = [Version] $GitVersionInfo.MajorMinorPatch
+    $Script:ProjectSemVersion = $($GitVersionInfo.fullsemver)
     write-verbose "Using Project Version: $ProjectBuildVersion"
     write-verbose "Using Extended Project Version: $($GitVersionInfo.fullsemver)"
 }
 
+#Copy all powershell module "artifacts" to Build Directory 
+task CopyFilesToBuildDir {
+    copy-item -Recurse "Public","Private","Traverse.ps*","License.TXT","README.md" $ProjectBuildPath -verbose
+}
 
-
-<#
-#Build the Module. Mostly just consists of updating the manifests
-task UpdateMetadata Version {
+#Update the Metadata of the Module with the latest Version
+task UpdateMetadata CopyFilesToBuildDir,Version, {
     # Load the module, read the exported functions, update the psd1 FunctionsToExport
-    Set-ModuleFunctions
-    
+    Set-ModuleFunctions $ProjectBuildPath -verbose
+    # Set the Module Version to the calculated Project Build version
+    Update-Metadata -Path ($ProjectBuildPath + "\" + (split-path $env:BHPSModuleManifest -leaf)) -PropertyName ModuleVersion -Value $ProjectBuildVersion
+
+
     # Are we in the master branch? Bump the version based on the powershell gallery if so, otherwise add a build tag
     if ($BHBranchName -eq 'master') {
         #Get-NextNugetPackageVersion -Name (Get-ProjectName)
@@ -99,16 +108,15 @@ task UpdateMetadata Version {
 #Pester Testing
 task Pester {
     "Starting Pester Tests..."
-    $TestFile = "$BuildOutput\TestResults_PS$PSVersion`_$TimeStamp.xml"
-    $PesterResult = Invoke-Pester -OutputFormat "NUnitXml" -OutputFile $TestFile -PassThru
+    $PesterResultFile = "$($env:BHBuildOutput)\$($env:BHProjectName)-TestResults_PS$PSVersion`_$TimeStamp.xml"
+    $PesterResult = Invoke-Pester -OutputFormat "NUnitXml" -OutputFile $PesterResultFile -PassThru
 
     # In Appveyor?  Upload our test results!
-    # TODO: Move this to its own task
     If($ENV:BHBuildSystem -eq 'AppVeyor')
     {
         (New-Object 'System.Net.WebClient').UploadFile(
             "https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)",
-            $TestFile )
+            $PesterResultFile )
     }
 
     # Failed tests?
@@ -122,10 +130,10 @@ task Pester {
 
 
 #Build SuperTask
-task Build UpdateMetadata
+task Build CopyFilesToBuildDir,UpdateMetadata
 
 #Test SuperTask
-task Test Pester
+task Test Build,Pester
 
 #Default Task - Build, Test with Pester, Deploy
 task . Build,Test
