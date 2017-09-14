@@ -12,7 +12,7 @@
 RootModule = 'Traverse.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.6.1'
+ModuleVersion = '0.6.3'
 
 # ID used to uniquely identify this module
 GUID = 'd3949a34-7ac5-4100-ba7d-a11da31a05aa'
@@ -66,7 +66,7 @@ PowerShellVersion = '3.0'
 #NestedModules = @("")
 
 # Functions to export from this module
-FunctionsToExport = '*'
+FunctionsToExport = @('Connect-TraverseBVE','Import-TraverseFlexCommand','Invoke-TraverseCommand')
 
 # Cmdlets to export from this module
 CmdletsToExport = '*'
@@ -107,7 +107,7 @@ PrivateData = @{
         IconUri = 'http://i.imgur.com/PZcQyZT.png'
 
         # ReleaseNotes of this module
-        ReleaseNotes = ''
+        ReleaseNotes = ': '
 
     } # End of PSData hashtable
 

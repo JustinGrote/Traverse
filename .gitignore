@@ -23,8 +23,9 @@ $RECYCLE.BIN/
 #Internal Files
 Public/Get-TraverseTemplate.txt
 
-#Generated Releases
+#Generated Releases/Builds
 Release
+BuildOutput
 
 # =========================
 # Operating System Files

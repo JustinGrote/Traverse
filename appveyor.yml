@@ -18,7 +18,7 @@ skip_commits:
 #To be portable to non-Appveyor builds
 build: false
 test_script:
-  - ps: . .\build.ps1
+  - ps: . .\Invoke-Build.ps1
 
 deploy: true
 
