@@ -47,7 +47,9 @@ task Version {
 
     #Fetch GitVersion
     $GitVersionCMDPackageName = "GitVersion.CommandLine"
-    Install-Package $GitVersionCMDPackageName -scope currentuser
+    if (!(Get-Package $GitVersionCMDPackageName)) {
+        Install-Package $GitVersionCMDPackageName -scope currentuser
+    }
     $GitVersionEXE = ((get-package gitversion.commandline).source | split-path -Parent) + "\tools\GitVersion.exe"
 
     #Does this project have a module manifest? Use that as the Gitversion starting point (will use this by default unless project is tagged higher)
@@ -68,7 +70,11 @@ task Version {
     #Calcuate the GitVersion
     $GitVersionInfo = iex "$GitVersionEXE $env:BHProjectPath" | ConvertFrom-JSON
     $Script:ProjectBuildVersion = [Version] $GitVersionInfo.MajorMinorPatch
+    write-verbose "Using Project Version: $ProjectBuildVersion"
+    write-verbose "Using Extended Project Version: $($GitVersionInfo.fullsemver)"
 }
+
+
 
 <#
 #Build the Module. Mostly just consists of updating the manifests
@@ -114,10 +120,6 @@ task Pester {
     "`n"
 }
 
-#Deployment Task. Uses PSDeploy module
-task Deploy Build,Test {
-    Invoke-PSDeploy
-}
 
 #Build SuperTask
 task Build UpdateMetadata
