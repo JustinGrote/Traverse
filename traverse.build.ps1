@@ -1,3 +1,4 @@
+#requires -version 5
 #Build Script for Traverse Powershell Module
 #Uses Invoke-Build (https://github.com/nightroman/Invoke-Build)
 #Run by changing to the project root directory and run ./Invoke-Build.ps1
@@ -15,13 +16,17 @@ Enter-Build {
         Register-PackageSource -provider NuGet -name nuget.org -location http://www.nuget.org/api/v2 -Trusted
     }
 
+    #All relevant module functions must be loaded or Invoke-Build will fail
     function Resolve-Module ($BuildModules) {
+        #Install a module from Powershell Gallery if it is not already available 
         foreach ($BuildModuleItem in $BuildModules) {
             if (get-module $BuildModuleItem -ListAvailable) {
                 #Uncomment if you want to ensure you always have the latest available version
                 #Update-Module $BuildModuleItem -verbose -warningaction silentlycontinue
+                Import-Module $BuildModuleItem
             } else {
                 Install-Module $BuildModuleItem -verbose -warningaction silentlycontinue
+                Import-Module $BuildModuleItem
             }
         }
     }
