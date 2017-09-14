@@ -25,7 +25,7 @@ Enter-Build {
                 #Update-Module $BuildModuleItem -verbose -warningaction silentlycontinue
                 Import-Module $BuildModuleItem
             } else {
-                Install-Module $BuildModuleItem -verbose -warningaction silentlycontinue
+                Install-Module $BuildModuleItem -verbose -warningaction silentlycontinue -scope currentuser
                 Import-Module $BuildModuleItem
             }
         }
