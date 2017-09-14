@@ -74,8 +74,8 @@ task Version {
     $GitVersionInfo = iex "$GitVersionEXE $env:BHProjectPath" | ConvertFrom-JSON
     $Script:ProjectBuildVersion = [Version] $GitVersionInfo.MajorMinorPatch
     $Script:ProjectSemVersion = $($GitVersionInfo.fullsemver)
-    write-verbose "Using Project Version: $ProjectBuildVersion"
-    write-verbose "Using Extended Project Version: $($GitVersionInfo.fullsemver)"
+    write-host -ForegroundColor Green "Using Project Version: $ProjectBuildVersion"
+    write-host -ForegroundColor Green "Using Extended Project Version: $($GitVersionInfo.fullsemver)"
 }
 
 #Copy all powershell module "artifacts" to Build Directory 
