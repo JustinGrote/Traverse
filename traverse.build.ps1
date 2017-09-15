@@ -17,24 +17,28 @@ Enter-Build {
     "--------------------"
     Get-Variable | select name,value,visibility | ft -autosize | out-string
 
-    if ($env:BHBuildSystem -eq 'AppVeyor') {
+    if ($APPVEYOR) {
         write-host -fore green "Detected that we are running in Appveyor! AppVeyor Environment Information:"
         get-item env:/Appveyor*
         write-host -fore Green "PS Module Path: $PSModulePath"
     }    
 
-    # Grab nuget bits, install modules, set build variables, start build.
-    Get-PackageProvider -Name NuGet -ForceBootstrap | Out-Null
+    #Register Nuget
+    if (!(get-packageprovider "Nuget")) {
+        Install-PackageProvider Nuget -forcebootstrap -verbose -scope currentuser
+    }
+
     #Add the nuget repository so we can download things like GitVersion
-    if (!(Get-PackageSource nuget.org)) {
+    if (!(Get-PackageSource "nuget.org")) {
         Register-PackageSource -provider NuGet -name nuget.org -location http://www.nuget.org/api/v2 -Trusted -verbose
     }
 
 
     #If we are in Appveyor, trust the powershell gallery for purposes of automatic module installation
-    #if ($env:BHBuildSystem -eq 'Appveyor') {
+    if ($APPVEYOR) {
+        echo "Detected Appveyor, setting Powershell Repository to trusted automatically to avoid prompts"
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -verbose
-    #}
+    }
 
     #All relevant module functions must be loaded or Invoke-Build will fail
     function Resolve-Module ($BuildModules) {
@@ -58,7 +62,9 @@ Enter-Build {
     Set-BuildEnvironment -force
     $Timestamp = Get-date -uformat "%Y%m%d-%H%M%S"
     $PSVersion = $PSVersionTable.PSVersion.Major
+
     "Build Environment Prepared! Environment Information:"
+    "-------------------------------"
     Get-BuildEnvironment
 
     #Move to the Project Directory if we aren't there already
@@ -68,7 +74,7 @@ Enter-Build {
 
     #Reset the BuildOutput Directory
     if (test-path $ProjectBuildPath)  {remove-item $ProjectBuildPath -Recurse -Force}
-    New-Item -ItemType Directory $ProjectBuildPath -force -verbose
+    New-Item -ItemType Directory $ProjectBuildPath -force | out-string
 }
 
 task Version {
@@ -80,7 +86,7 @@ task Version {
     if (!(Get-Package $GitVersionCMDPackageName)) {
         Install-Package $GitVersionCMDPackageName -scope currentuser
     }
-    $GitVersionEXE = ((get-package gitversion.commandline).source | split-path -Parent) + "\tools\GitVersion.exe"
+    $GitVersionEXE = ((get-package "gitversion.commandline").source | split-path -Parent) + "\tools\GitVersion.exe"
 
     #Does this project have a module manifest? Use that as the Gitversion starting point (will use this by default unless project is tagged higher)
     #Uses Powershell-YAML module to read/write the GitVersion.yaml config file
@@ -139,7 +145,7 @@ task Pester {
     $PesterResult = Invoke-Pester -OutputFormat "NUnitXml" -OutputFile $PesterResultFile -PassThru
 
     # In Appveyor?  Upload our test results!
-    If($ENV:BHBuildSystem -eq 'AppVeyor')
+    If($APPVEYOR)
     {
         (New-Object 'System.Net.WebClient').UploadFile(
             "https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)",
