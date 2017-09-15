@@ -35,15 +35,19 @@ Enter-Build {
             if (get-module $BuildModuleItem -ListAvailable) {
                 #Uncomment if you want to ensure you always have the latest available version
                 #Update-Module $BuildModuleItem -verbose -warningaction silentlycontinue
-                Import-Module $BuildModuleItem -verbose
+                #Import-Module $BuildModuleItem -verbose
             } else {
                 Install-Module $BuildModuleItem -verbose -warningaction silentlycontinue -scope currentuser
-                Import-Module $BuildModuleItem -verbose
+                #Import-Module $BuildModuleItem -verbose
             }
         }
     }
 
+    
+
     Resolve-Module $BuildHelperModules
+    get-module -listavailable
+
 
     Set-BuildEnvironment -force
     $Timestamp = Get-date -uformat "%Y%m%d-%H%M%S"
