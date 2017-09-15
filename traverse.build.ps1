@@ -9,17 +9,23 @@ Enter-Build {
     $BuildHelperModules = "BuildHelpers","PSDeploy","Pester","powershell-yaml"
     "Setting up Build Environment..."
 
+    if ($env:BHBuildSystem -eq 'AppVeyor') {
+        "Detected that we are running in Appveyor! AppVeyor Environment Information:"
+            get-item env:/Appveyor*
+            echo "PS Module Path: $PSModulePath"
+    }    
+
     # Grab nuget bits, install modules, set build variables, start build.
     Get-PackageProvider -Name NuGet -ForceBootstrap | Out-Null
     #Add the nuget repository so we can download things like GitVersion
     if (!(Get-PackageSource nuget.org)) {
-        Register-PackageSource -provider NuGet -name nuget.org -location http://www.nuget.org/api/v2 -Trusted
+        Register-PackageSource -provider NuGet -name nuget.org -location http://www.nuget.org/api/v2 -Trusted -verbose
     }
 
 
     #If we are in Appveyor, trust the powershell gallery for purposes of automatic module installation
     if ($env:BHBuildSystem -eq 'Appveyor') {
-        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -verbose
     }
 
     #All relevant module functions must be loaded or Invoke-Build will fail
@@ -29,10 +35,10 @@ Enter-Build {
             if (get-module $BuildModuleItem -ListAvailable) {
                 #Uncomment if you want to ensure you always have the latest available version
                 #Update-Module $BuildModuleItem -verbose -warningaction silentlycontinue
-                Import-Module $BuildModuleItem
+                Import-Module $BuildModuleItem -verbose
             } else {
                 Install-Module $BuildModuleItem -verbose -warningaction silentlycontinue -scope currentuser
-                Import-Module $BuildModuleItem
+                Import-Module $BuildModuleItem -verbose
             }
         }
     }
@@ -45,11 +51,6 @@ Enter-Build {
     "Build Environment Prepared! Environment Information:"
     Get-BuildEnvironment
 
-    #
-    if ($env:BHBuildSystem -eq 'AppVeyor') {
-    "Detected that we are running in Appveyor! AppVeyor Environment Information:"
-        get-item env:/Appveyor*
-    }
     #Move to the Project Directory if we aren't there already
     Set-Location $env:BHProjectPath
     
