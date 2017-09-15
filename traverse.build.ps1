@@ -25,7 +25,7 @@ Enter-Build {
 
     "Package Providers"
     "-----------------"
-    Get-PackageProvider
+    Get-PackageProvider -listavailable
 
     #Register Nuget
     if (!(get-packageprovider "Nuget")) {
