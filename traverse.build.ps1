@@ -9,6 +9,14 @@ Enter-Build {
     $BuildHelperModules = "BuildHelpers","PSDeploy","Pester","powershell-yaml"
     "Setting up Build Environment..."
 
+    "Environment Variables"
+    "---------------------"
+    dir env: | out-string
+
+    "Powershell Variables"
+    "--------------------"
+    Get-Variable | select name,value,visibility | ft -autosize | out-string
+
     if ($env:BHBuildSystem -eq 'AppVeyor') {
         write-host -fore green "Detected that we are running in Appveyor! AppVeyor Environment Information:"
         get-item env:/Appveyor*
@@ -24,9 +32,9 @@ Enter-Build {
 
 
     #If we are in Appveyor, trust the powershell gallery for purposes of automatic module installation
-    if ($env:BHBuildSystem -eq 'Appveyor') {
+    #if ($env:BHBuildSystem -eq 'Appveyor') {
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -verbose
-    }
+    #}
 
     #All relevant module functions must be loaded or Invoke-Build will fail
     function Resolve-Module ($BuildModules) {
@@ -46,8 +54,6 @@ Enter-Build {
     
 
     Resolve-Module $BuildHelperModules
-    get-module -listavailable
-
 
     Set-BuildEnvironment -force
     $Timestamp = Get-date -uformat "%Y%m%d-%H%M%S"
