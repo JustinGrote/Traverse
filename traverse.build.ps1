@@ -10,9 +10,9 @@ Enter-Build {
     "Setting up Build Environment..."
 
     if ($env:BHBuildSystem -eq 'AppVeyor') {
-        "Detected that we are running in Appveyor! AppVeyor Environment Information:"
-            get-item env:/Appveyor*
-            echo "PS Module Path: $PSModulePath"
+        write-host -fore green "Detected that we are running in Appveyor! AppVeyor Environment Information:"
+        get-item env:/Appveyor*
+        write-host -fore Green "PS Module Path: $PSModulePath"
     }    
 
     # Grab nuget bits, install modules, set build variables, start build.
