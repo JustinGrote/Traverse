@@ -11,11 +11,11 @@ Enter-Build {
 
     "Environment Variables"
     "---------------------"
-    dir env: | out-string
+    get-childitem env: | out-string
 
     "Powershell Variables"
     "--------------------"
-    Get-Variable | select name,value,visibility | ft -autosize | out-string
+    Get-Variable | select-object name,value,visibility | format-table -autosize | out-string
 
     if ($APPVEYOR) {
         write-host -fore green "Detected that we are running in Appveyor! AppVeyor Environment Information:"
@@ -34,9 +34,9 @@ Enter-Build {
     }
 
 
-    #If we are in Appveyor, trust the powershell gallery for purposes of automatic module installation
-    if ($APPVEYOR) {
-        echo "Detected Appveyor, setting Powershell Repository to trusted automatically to avoid prompts"
+    #If we are in a CI (Appveyor/etc.), trust the powershell gallery for purposes of automatic module installation
+    if ($CI) {
+        echo "Detected a CI environment, setting Powershell Repository to trusted automatically to avoid prompts"
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -verbose
     }
 
@@ -72,6 +72,9 @@ Enter-Build {
     
     $Script:ProjectBuildPath = $env:BHBuildOutput + "\" + $env:BHProjectName
 
+}
+
+task Clean {
     #Reset the BuildOutput Directory
     if (test-path $ProjectBuildPath)  {remove-item $ProjectBuildPath -Recurse -Force}
     New-Item -ItemType Directory $ProjectBuildPath -force | out-string
@@ -84,7 +87,7 @@ task Version {
     #Fetch GitVersion
     $GitVersionCMDPackageName = "GitVersion.CommandLine"
     if (!(Get-Package $GitVersionCMDPackageName)) {
-        Install-Package $GitVersionCMDPackageName -scope currentuser
+        Install-Package $GitVersionCMDPackageName -scope currentuser -verbose
     }
     $GitVersionEXE = ((get-package "gitversion.commandline").source | split-path -Parent) + "\tools\GitVersion.exe"
 
@@ -166,8 +169,8 @@ task Pester {
 task Build CopyFilesToBuildDir,UpdateMetadata
 
 #Test SuperTask
-task Test Build,Pester
+task Test Pester
 
 #Default Task - Build, Test with Pester, Deploy
-task . Build,Test
+task . Clean,Build,Test
 
