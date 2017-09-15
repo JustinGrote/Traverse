@@ -18,10 +18,10 @@ Enter-Build {
 
 
     #If we are in Appveyor, trust the powershell gallery for purposes of automatic module installation
-    if ($env:BHBuildSystem -eq 'Appveyor') {}
+    if ($env:BHBuildSystem -eq 'Appveyor') {
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
     }
-    
+
     #All relevant module functions must be loaded or Invoke-Build will fail
     function Resolve-Module ($BuildModules) {
         #Install a module from Powershell Gallery if it is not already available 
