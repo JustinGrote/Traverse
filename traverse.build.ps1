@@ -23,20 +23,26 @@ Enter-Build {
         write-host -fore Green "PS Module Path: $PSModulePath"
     }    
 
+    "Package Providers"
+    "-----------------"
+    Get-PackageProvider
+
     #Register Nuget
     if (!(get-packageprovider "Nuget")) {
+        "Registering Nuget..."
         Install-PackageProvider Nuget -forcebootstrap -verbose -scope currentuser
     }
 
     #Add the nuget repository so we can download things like GitVersion
     if (!(Get-PackageSource "nuget.org")) {
+        "Registering nuget.org as package source"
         Register-PackageSource -provider NuGet -name nuget.org -location http://www.nuget.org/api/v2 -Trusted -verbose
     }
 
 
     #If we are in a CI (Appveyor/etc.), trust the powershell gallery for purposes of automatic module installation
     if ($CI) {
-        echo "Detected a CI environment, setting Powershell Repository to trusted automatically to avoid prompts"
+        "Detected a CI environment, setting Powershell Repository to trusted automatically to avoid prompts"
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -verbose
     }
 
@@ -107,7 +113,7 @@ task Version {
     }
 
     #Calcuate the GitVersion
-    $GitVersionInfo = iex "$GitVersionEXE $env:BHProjectPath" | ConvertFrom-JSON
+    $GitVersionInfo = Invoke-Expression "$GitVersionEXE $env:BHProjectPath" | ConvertFrom-JSON
     $Script:ProjectBuildVersion = [Version] $GitVersionInfo.MajorMinorPatch
     $Script:ProjectSemVersion = $($GitVersionInfo.fullsemver)
     write-host -ForegroundColor Green "Using Project Version: $ProjectBuildVersion"
