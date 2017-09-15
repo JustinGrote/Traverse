@@ -31,12 +31,18 @@ Enter-Build {
     if (!(get-packageprovider "Nuget")) {
         "Registering Nuget..."
         Install-PackageProvider Nuget -forcebootstrap -verbose -scope currentuser
+
+        "Installed Nuget Provider Info"
+        Get-PackageProvider Nuget | format-list | out-string
     }
 
     #Add the nuget repository so we can download things like GitVersion
     if (!(Get-PackageSource "nuget.org")) {
         "Registering nuget.org as package source"
         Register-PackageSource -provider NuGet -name nuget.org -location http://www.nuget.org/api/v2 -Trusted -verbose
+
+        "Nuget.Org Package Source Info "
+        Get-PackageSource -name nuget.org
     }
 
 
@@ -51,17 +57,18 @@ Enter-Build {
         #Install a module from Powershell Gallery if it is not already available 
         foreach ($BuildModuleItem in $BuildModules) {
             if (get-module $BuildModuleItem -ListAvailable) {
+                "Module $BuildModuleItem is installed on this system. Importing..."
                 #Uncomment if you want to ensure you always have the latest available version
                 #Update-Module $BuildModuleItem -verbose -warningaction silentlycontinue
-                #Import-Module $BuildModuleItem -verbose
+                Import-Module $BuildModuleItem -verbose
             } else {
+                "Module $BuildModuleItem not found. Downloading..."
                 Install-Module $BuildModuleItem -verbose -warningaction silentlycontinue -scope currentuser
-                #Import-Module $BuildModuleItem -verbose
+                "Module $BuildModuleItem downloaded. Importing..."
+                Import-Module $BuildModuleItem -verbose
             }
         }
     }
-
-    
 
     Resolve-Module $BuildHelperModules
 
