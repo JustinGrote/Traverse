@@ -21,7 +21,15 @@ Enter-Build {
         write-host -fore green "Detected that we are running in Appveyor! AppVeyor Environment Information:"
         get-item env:/Appveyor*
         write-host -fore Green "PS Module Path: $PSModulePath"
-    }    
+    }
+
+    #If we are in a CI (Appveyor/etc.), trust the powershell gallery for purposes of automatic module installation
+    #We do this so that if running locally, you are still prompted to install software required by the build
+    #If necessary. In a CI, we want it to happen automatically because it'll just be torn down anyways.
+    if ($CI) {
+        "Detected a CI environment, setting Powershell Repository to trusted automatically to avoid prompts"
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -verbose
+    }
 
     "Package Providers"
     "-----------------"
@@ -37,7 +45,7 @@ Enter-Build {
     }
 
     #Add the nuget repository so we can download things like GitVersion
-    if (!(Get-PackageSource "nuget.org")) {
+    if (!(Get-PackageSource "nuget.org" -erroraction silentlycontinue)) {
         "Registering nuget.org as package source"
         Register-PackageSource -provider NuGet -name nuget.org -location http://www.nuget.org/api/v2 -Trusted -verbose
 
@@ -46,11 +54,6 @@ Enter-Build {
     }
 
 
-    #If we are in a CI (Appveyor/etc.), trust the powershell gallery for purposes of automatic module installation
-    if ($CI) {
-        "Detected a CI environment, setting Powershell Repository to trusted automatically to avoid prompts"
-        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -verbose
-    }
 
     #All relevant module functions must be loaded or Invoke-Build will fail
     function Resolve-Module ($BuildModules) {
