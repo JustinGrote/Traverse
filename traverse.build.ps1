@@ -26,7 +26,7 @@ Enter-Build {
     #If we are in a CI (Appveyor/etc.), trust the powershell gallery for purposes of automatic module installation
     #We do this so that if running locally, you are still prompted to install software required by the build
     #If necessary. In a CI, we want it to happen automatically because it'll just be torn down anyways.
-    if ($CI) {
+    if ($env:CI) {
         "Detected a CI environment, setting Powershell Repository to trusted automatically and disabling prompt confirmations"
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -verbose
         $ConfirmPreference = “None”
