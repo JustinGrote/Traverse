@@ -27,8 +27,7 @@ Enter-Build {
     #We do this so that if running locally, you are still prompted to install software required by the build
     #If necessary. In a CI, we want it to happen automatically because it'll just be torn down anyways.
     if ($env:CI) {
-        "Detected a CI environment, setting Powershell Repository to trusted automatically and disabling prompt confirmations"
-        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -verbose
+        "Detected a CI environment, disabling prompt confirmations"
         $ConfirmPreference = “None”
     }
 
@@ -41,9 +40,14 @@ Enter-Build {
     if (!(get-packageprovider "Nuget" -ErrorAction silentlycontinue)) {
         "Nuget Provider Not found. Fetching..."
         Install-PackageProvider Nuget -forcebootstrap -verbose -scope currentuser
-
+        
         "Installed Nuget Provider Info"
         Get-PackageProvider Nuget | format-list | out-string
+    }
+
+    if ($env:CI) {
+        "Detected a CI environment, implicity trusting Powershell Gallery to reduce prompts"
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -verbose
     }
 
     #Add the nuget repository so we can download things like GitVersion
