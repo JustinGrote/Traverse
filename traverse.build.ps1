@@ -27,9 +27,11 @@ Enter-Build {
     #We do this so that if running locally, you are still prompted to install software required by the build
     #If necessary. In a CI, we want it to happen automatically because it'll just be torn down anyways.
     if ($CI) {
-        "Detected a CI environment, setting Powershell Repository to trusted automatically to avoid prompts"
+        "Detected a CI environment, setting Powershell Repository to trusted automatically and disabling prompt confirmations"
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -verbose
+        $ConfirmPreference = “None”
     }
+
 
     "Package Providers"
     "-----------------"
