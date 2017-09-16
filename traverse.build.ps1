@@ -28,8 +28,8 @@ Enter-Build {
     Get-PackageProvider -listavailable
 
     #Register Nuget
-    if (!(get-packageprovider "Nuget")) {
-        "Registering Nuget..."
+    if (!(get-packageprovider "Nuget" -ErrorAction silentlycontinue)) {
+        "Nuget Provider Not found. Fetching..."
         Install-PackageProvider Nuget -forcebootstrap -verbose -scope currentuser
 
         "Installed Nuget Provider Info"
