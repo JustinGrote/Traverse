@@ -8,14 +8,20 @@
 Enter-Build {
     $BuildHelperModules = "BuildHelpers","PSDeploy","Pester","powershell-yaml"
     "Setting up Build Environment..."
+    if ($PSBoundParameters["Verbose"]) {
+        "Environment Variables"
+        "---------------------"
+        get-childitem env: | out-string
+    
+        "Powershell Variables"
+        "--------------------"
+        Get-Variable | select-object name,value,visibility | format-table -autosize | out-string    
 
-    "Environment Variables"
-    "---------------------"
-    get-childitem env: | out-string
-
-    "Powershell Variables"
-    "--------------------"
-    Get-Variable | select-object name,value,visibility | format-table -autosize | out-string
+        "Package Providers"
+        "-----------------"
+        Get-PackageProvider -listavailable
+    
+    }
 
     if ($APPVEYOR) {
         write-host -fore green "Detected that we are running in Appveyor! AppVeyor Environment Information:"
@@ -31,10 +37,6 @@ Enter-Build {
         $ConfirmPreference = “None”
     }
 
-
-    "Package Providers"
-    "-----------------"
-    Get-PackageProvider -listavailable
 
     #Register Nuget
     if (!(get-packageprovider "Nuget" -ErrorAction silentlycontinue)) {
@@ -69,12 +71,12 @@ Enter-Build {
                 "Module $BuildModuleItem is installed on this system. Importing..."
                 #Uncomment if you want to ensure you always have the latest available version
                 #Update-Module $BuildModuleItem -verbose -warningaction silentlycontinue
-                Import-Module $BuildModuleItem -verbose
+                Import-Module $BuildModuleItem
             } else {
                 "Module $BuildModuleItem not found. Downloading..."
                 Install-Module $BuildModuleItem -verbose -warningaction silentlycontinue -scope currentuser
                 "Module $BuildModuleItem downloaded. Importing..."
-                Import-Module $BuildModuleItem -verbose
+                Import-Module $BuildModuleItem
             }
         }
     }
@@ -84,11 +86,13 @@ Enter-Build {
     Set-BuildEnvironment -force
     $Timestamp = Get-date -uformat "%Y%m%d-%H%M%S"
     $PSVersion = $PSVersionTable.PSVersion.Major
-
-    "Build Environment Prepared! Environment Information:"
-    "-------------------------------"
-    Get-BuildEnvironment
-
+    
+    if ($PSBoundParameters["Verbose"]) {
+        "Build Environment Prepared! Environment Information:"
+        "-------------------------------"
+        Get-BuildEnvironment
+    }
+    
     #Move to the Project Directory if we aren't there already
     Set-Location $env:BHProjectPath
     
@@ -99,7 +103,7 @@ Enter-Build {
 task Clean {
     #Reset the BuildOutput Directory
     if (test-path $ProjectBuildPath)  {remove-item $ProjectBuildPath -Recurse -Force}
-    New-Item -ItemType Directory $ProjectBuildPath -force | out-string
+    New-Item -ItemType Directory $ProjectBuildPath -force | % FullName | out-string
 }
 
 task Version {
