@@ -66,7 +66,7 @@ PowerShellVersion = '3.0'
 #NestedModules = @("")
 
 # Functions to export from this module
-FunctionsToExport = @('Connect-TraverseBVE','Import-TraverseFlexCommand','Invoke-TraverseCommand')
+FunctionsToExport = '*'
 
 # Cmdlets to export from this module
 CmdletsToExport = '*'

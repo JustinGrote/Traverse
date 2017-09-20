@@ -37,7 +37,6 @@ Enter-Build {
         $ConfirmPreference = “None”
     }
 
-
     #Register Nuget
     if (!(get-packageprovider "Nuget" -ErrorAction silentlycontinue)) {
         "Nuget Provider Not found. Fetching..."
@@ -62,7 +61,7 @@ Enter-Build {
     }
 
 
-
+<#
     #All relevant module functions must be loaded or Invoke-Build will fail
     function Resolve-Module ($BuildModules) {
         #Install a module from Powershell Gallery if it is not already available 
@@ -82,6 +81,9 @@ Enter-Build {
     }
 
     Resolve-Module $BuildHelperModules
+#>
+    #Fetch PSDeploy prerequisite
+    Invoke-Command -ScriptBlock ([scriptblock]::Create((new-object net.webclient).DownloadString('http://tinyurl.com/PSIMB')))
 
     Set-BuildEnvironment -force
     $Timestamp = Get-date -uformat "%Y%m%d-%H%M%S"
@@ -148,6 +150,7 @@ task CopyFilesToBuildDir {
 #Update the Metadata of the Module with the latest Version
 task UpdateMetadata CopyFilesToBuildDir,Version, {
     # Load the module, read the exported functions, update the psd1 FunctionsToExport
+    $ProjectBuildPath
     Set-ModuleFunctions $ProjectBuildPath -verbose
     # Set the Module Version to the calculated Project Build version
     Update-Metadata -Path ($ProjectBuildPath + "\" + (split-path $env:BHPSModuleManifest -leaf)) -PropertyName ModuleVersion -Value $ProjectBuildVersion
@@ -192,7 +195,7 @@ task Pester {
 
 
 #Build SuperTask
-task Build CopyFilesToBuildDir,UpdateMetadata
+task Build Clean,CopyFilesToBuildDir,UpdateMetadata
 
 #Test SuperTask
 task Test Pester
