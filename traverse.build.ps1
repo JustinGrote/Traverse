@@ -40,6 +40,7 @@ Enter-Build {
     #Fetch PSDepend prerequisite using Install-ModuleBootstrap script
     Invoke-Command -ScriptBlock ([scriptblock]::Create((new-object net.webclient).DownloadString('http://tinyurl.com/PSIMB')))
     Invoke-Command -ArgumentList 'BuildHelpers' -ScriptBlock ([scriptblock]::Create((new-object net.webclient).DownloadString('http://tinyurl.com/PSIMB'))) 
+    Invoke-Command -ArgumentList 'powershell-yaml' -ScriptBlock ([scriptblock]::Create((new-object net.webclient).DownloadString('http://tinyurl.com/PSIMB')))
     Import-Module PSDepend,BuildHelpers
 
     #Register Nuget
