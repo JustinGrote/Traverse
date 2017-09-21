@@ -45,20 +45,20 @@ Enter-Build {
     #Register Nuget
     if (!(get-packageprovider "Nuget" -ForceBootstrap -ErrorAction silentlycontinue)) {
         "Nuget Provider Not found. Fetching..."
-        Install-PackageProvider Nuget -forcebootstrap -verbose -scope currentuser
-        
-        "Installed Nuget Provider Info"
-        Get-PackageProvider Nuget | format-list | out-string
+        Install-PackageProvider Nuget -forcebootstrap -verbose -scope currentuser    
     }
+
+    "Installed Nuget Provider Info"
+    Get-PackageProvider Nuget | format-list | out-string
 
     #Add the nuget repository so we can download things like GitVersion
     if (!(Get-PackageSource "nuget.org" -erroraction silentlycontinue)) {
         "Registering nuget.org as package source"
         Register-PackageSource -provider NuGet -name nuget.org -location http://www.nuget.org/api/v2 -Trusted -verbose
-
-        "Nuget.Org Package Source Info "
-        Get-PackageSource -name nuget.org
     }
+
+    "Nuget.Org Package Source Info "
+    Get-PackageSource -name nuget.org | format-list | out-string
 
 
 
@@ -93,9 +93,9 @@ task Version {
     #Fetch GitVersion
     $GitVersionCMDPackageName = "GitVersion.CommandLine"
     if (!(Get-Package $GitVersionCMDPackageName)) {
-        Install-Package $GitVersionCMDPackageName -scope currentuser -verbose
+        Install-Package $GitVersionCMDPackageName -scope currentuser -source 'nuget.org' -verbose -force
     }
-    $GitVersionEXE = ((get-package "gitversion.commandline").source | split-path -Parent) + "\tools\GitVersion.exe"
+    $GitVersionEXE = ((get-package $GitVersionCMDPackageName).source | split-path -Parent) + "\tools\GitVersion.exe"
 
     #Does this project have a module manifest? Use that as the Gitversion starting point (will use this by default unless project is tagged higher)
     #Uses Powershell-YAML module to read/write the GitVersion.yaml config file
