@@ -34,7 +34,7 @@ Enter-Build {
     #If necessary. In a CI, we want it to happen automatically because it'll just be torn down anyways.
     if ($env:CI) {
         "Detected a CI environment, disabling prompt confirmations"
-        $ConfirmPreference = “None”
+        $ConfirmPreference = "None"
     }
 
     #Register Nuget
