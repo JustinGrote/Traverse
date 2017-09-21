@@ -97,9 +97,10 @@ task Version {
 
     #Fetch GitVersion
     $GitVersionCMDPackageName = "gitversion.commandline"
-    if (!(Get-Package $GitVersionCMDPackageName)) {
+    if (!(Get-Package $GitVersionCMDPackageName -erroraction SilentlyContinue)) {
+        "Package Not Found, Searching..."
         $VerbosePreference = "continue"
-        Find-Package $GitVersionCMDPackageName -source "nuget.org" -verbose
+#        Find-Package $GitVersionCMDPackageName -source "nuget.org" -verbose
         Install-Package $GitVersionCMDPackageName -scope currentuser -source 'nuget.org' -verbose -force
     }
     $GitVersionEXE = ((get-package $GitVersionCMDPackageName).source | split-path -Parent) + "\tools\GitVersion.exe"
