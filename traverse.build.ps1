@@ -96,8 +96,10 @@ task Version {
     Get-PackageSource | fl | out-string
 
     #Fetch GitVersion
-    $GitVersionCMDPackageName = "GitVersion.CommandLine"
+    $GitVersionCMDPackageName = "gitversion.commandline"
     if (!(Get-Package $GitVersionCMDPackageName)) {
+        $VerbosePreference = "continue"
+        Find-Package $GitVersionCMDPackageName -source "nuget.org" -verbose
         Install-Package $GitVersionCMDPackageName -scope currentuser -source 'nuget.org' -verbose -force
     }
     $GitVersionEXE = ((get-package $GitVersionCMDPackageName).source | split-path -Parent) + "\tools\GitVersion.exe"
