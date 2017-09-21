@@ -37,18 +37,17 @@ Enter-Build {
         $ConfirmPreference = "None"
     }
 
+    #Fetch PSDepend prerequisite using Install-ModuleBootstrap script
+    Invoke-Command -ScriptBlock ([scriptblock]::Create((new-object net.webclient).DownloadString('http://tinyurl.com/PSIMB')))
+    Import-Module PSDepend
+
     #Register Nuget
-    if (!(get-packageprovider "Nuget" -ErrorAction silentlycontinue)) {
+    if (!(get-packageprovider "Nuget" -ForceBootstrap -ErrorAction silentlycontinue)) {
         "Nuget Provider Not found. Fetching..."
         Install-PackageProvider Nuget -forcebootstrap -verbose -scope currentuser
         
         "Installed Nuget Provider Info"
         Get-PackageProvider Nuget | format-list | out-string
-    }
-
-    if ($env:CI) {
-        "Detected a CI environment, implicity trusting Powershell Gallery to reduce prompts"
-        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -verbose
     }
 
     #Add the nuget repository so we can download things like GitVersion
@@ -61,30 +60,8 @@ Enter-Build {
     }
 
 
-<#
-    #All relevant module functions must be loaded or Invoke-Build will fail
-    function Resolve-Module ($BuildModules) {
-        #Install a module from Powershell Gallery if it is not already available 
-        foreach ($BuildModuleItem in $BuildModules) {
-            if (get-module $BuildModuleItem -ListAvailable) {
-                "Module $BuildModuleItem is installed on this system. Importing..."
-                #Uncomment if you want to ensure you always have the latest available version
-                #Update-Module $BuildModuleItem -verbose -warningaction silentlycontinue
-                Import-Module $BuildModuleItem
-            } else {
-                "Module $BuildModuleItem not found. Downloading..."
-                Install-Module $BuildModuleItem -verbose -warningaction silentlycontinue -scope currentuser
-                "Module $BuildModuleItem downloaded. Importing..."
-                Import-Module $BuildModuleItem
-            }
-        }
-    }
 
-    Resolve-Module $BuildHelperModules
-#>
-    #Fetch PSDeploy prerequisite
-    Invoke-Command -ScriptBlock ([scriptblock]::Create((new-object net.webclient).DownloadString('http://tinyurl.com/PSIMB')))
-
+    
     Set-BuildEnvironment -force
     $Timestamp = Get-date -uformat "%Y%m%d-%H%M%S"
     $PSVersion = $PSVersionTable.PSVersion.Major
