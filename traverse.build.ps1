@@ -55,10 +55,12 @@ Enter-Build {
     if (!(Get-PackageSource "nuget.org" -erroraction silentlycontinue)) {
         "Registering nuget.org as package source"
         Register-PackageSource -provider NuGet -name nuget.org -location http://www.nuget.org/api/v2 -Trusted -verbose
+    } else {
+        Set-PackageSource -name 'nuget.org' -Trusted
     }
 
     "Nuget.Org Package Source Info "
-    Get-PackageSource -name nuget.org | format-list | out-string
+    Get-PackageSource | format-table | out-string
 
 
 
@@ -89,6 +91,9 @@ task Clean {
 task Version {
     #This task determines what version number to assign this build
     $GitVersionConfig = "$env:BHProjectPath/GitVersion.yml"
+
+    "Nuget.Org Package Source Info for fetching Gitversion"
+    Get-PackageSource | fl | out-string
 
     #Fetch GitVersion
     $GitVersionCMDPackageName = "GitVersion.CommandLine"
