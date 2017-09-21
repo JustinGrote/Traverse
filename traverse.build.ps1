@@ -39,7 +39,8 @@ Enter-Build {
 
     #Fetch PSDepend prerequisite using Install-ModuleBootstrap script
     Invoke-Command -ScriptBlock ([scriptblock]::Create((new-object net.webclient).DownloadString('http://tinyurl.com/PSIMB')))
-    Import-Module PSDepend
+    Invoke-Command -ArgumentList 'BuildHelpers' -ScriptBlock ([scriptblock]::Create((new-object net.webclient).DownloadString('http://tinyurl.com/PSIMB'))) 
+    Import-Module PSDepend,BuildHelpers
 
     #Register Nuget
     if (!(get-packageprovider "Nuget" -ForceBootstrap -ErrorAction silentlycontinue)) {
