@@ -98,6 +98,9 @@ task Clean {
         remove-item $env:BHBuildOutput -Recurse -Force @PassThruParams
     }
     New-Item -ItemType Directory $ProjectBuildPath -force | % FullName | out-string | write-verbose
+
+    #Unmount any modules named the same as our module
+    
 }
 
 task Version {
@@ -152,7 +155,7 @@ task Version {
     
     #If we are in the develop branch, add the prerelease number as revision
     #TODO: Make the develop and master regex customizable in a settings file
-    if ($env:BHBranchName -match '^Develo\w*$') {
+    if ($env:BHBranchName -match '^dev(elop)?(ment)?$') {
         $SCRIPT:ProjectBuildVersion = ($GitVersionInfo.MajorMinorPatch + "." + $GitVersionInfo.PreReleaseNumber)
     } else {
         $SCRIPT:ProjectBuildVersion = [Version] $GitVersionInfo.MajorMinorPatch
@@ -179,7 +182,7 @@ task UpdateMetadata CopyFilesToBuildDir,Version,{
     Update-Metadata -Path ($ProjectBuildPath + "\" + (split-path $env:BHPSModuleManifest -leaf)) -PropertyName ModuleVersion -Value $ProjectBuildVersion
     
     # Are we in the master or develop/development branch? Bump the version based on the powershell gallery if so, otherwise add a build tag
-    if ($ENV:BHBranchName -match '^(master|develo\w*)$') {
+    if ($ENV:BHBranchName -match '^(master|dev(elop)?(ment)?)$') {
         write-build Green "In Master/Develop branch, adding Tag Version $ProjectSemVersion to this build"
         if (-not (git tag -l $ProjectBuildVersion)) {
             git tag "$ProjectBuildVersion"
