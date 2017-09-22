@@ -6,27 +6,48 @@
 
 #Initialize Build Environment
 Enter-Build {
+    
     $BuildHelperModules = "BuildHelpers","PSDeploy","Pester","powershell-yaml"
-    "Setting up Build Environment..."
-    if ($PSBoundParameters["Verbose"]) {
-        "Environment Variables"
-        "---------------------"
-        get-childitem env: | out-string
+    #Fetch Build Helper Modules using Install-ModuleBootstrap script
+    #The comma in ArgumentList a weird idiosyncracy to make sure a nested array is created to ensure Argumentlist 
+    #doesn't unwrap the buildhelpermodules as individual arguments
+    Invoke-Command -ArgumentList @(,$BuildHelperModules) -ScriptBlock ([scriptblock]::Create((new-object net.webclient).DownloadString('http://tinyurl.com/PSIMB'))) 
     
-        "Powershell Variables"
-        "--------------------"
-        Get-Variable | select-object name,value,visibility | format-table -autosize | out-string    
+    #Initialize helpful build environment variables
+    $Timestamp = Get-date -uformat "%Y%m%d-%H%M%S"
+    $PSVersion = $PSVersionTable.PSVersion.Major
+    Set-BuildEnvironment -force
 
-        "Package Providers"
-        "-----------------"
-        Get-PackageProvider -listavailable
+    write-verbose "Build Environment Prepared! Environment Information:"
+    write-verbose "-------------------------------"
+    write-verbose Get-BuildEnvironment | fl | out-string | write-verbose
+
+
+    $PassThruParams = @{}
+
+    write-verbose "Verbose Build Logging Enabled"
+    $PassThruParams.Verbose = $true
+
+    write-verbose "Setting up Build Environment..."
+    write-verbose "Environment Variables" 
+    write-verbose "---------------------"
+    get-childitem env: | out-string | write-verbose
+
+    write-verbose "Powershell Variables"
+    write-verbose "--------------------"
+    Get-Variable | select-object name,value,visibility | format-table -autosize | out-string | write-verbose   
+
+    write-verbose "Nuget Package Providers"
+    write-verbose "-----------------"
+    Get-PackageProvider -listavailable | write-verbose
     
-    }
 
     if ($APPVEYOR) {
-        write-host -fore green "Detected that we are running in Appveyor! AppVeyor Environment Information:"
-        get-item env:/Appveyor*
-        write-host -fore Green "PS Module Path: $PSModulePath"
+        write-verbose "Detected that we are running in Appveyor!"
+        write-verbose "AppVeyor Environment Information:"
+        write-verbose "-----------------"
+        get-item env:/Appveyor* | out-string | write-verbose
+        write-verbose "PS Module Path: $PSModulePath"
     }
 
     #If we are in a CI (Appveyor/etc.), trust the powershell gallery for purposes of automatic module installation
@@ -37,44 +58,32 @@ Enter-Build {
         $ConfirmPreference = "None"
     }
 
-    #Fetch Build Helper Modules using Install-ModuleBootstrap script
-    foreach ($BuildHelperModuleItem in $BuildHelperModules) {
-        Invoke-Command -ArgumentList $BuildHelperModuleItem -ScriptBlock ([scriptblock]::Create((new-object net.webclient).DownloadString('http://tinyurl.com/PSIMB'))) 
-        Import-Module $BuildHelperModuleItem
-    }
 
     #Register Nuget
     if (!(get-packageprovider "Nuget" -ForceBootstrap -ErrorAction silentlycontinue)) {
-        "Nuget Provider Not found. Fetching..."
-        Install-PackageProvider Nuget -forcebootstrap -verbose -scope currentuser    
+        write-verbose "Nuget Provider Not found. Fetching..."
+        Install-PackageProvider Nuget -forcebootstrap -scope currentuser @PassThruParams | out-string | write-verbose
+
+        write-verbose "Installed Nuget Provider Info"
+        write-verbose "-----------------------------"
+        Get-PackageProvider Nuget @PassThruParams | format-list | out-string | write-verbose
     }
 
-    "Installed Nuget Provider Info"
-    Get-PackageProvider Nuget | format-list | out-string
+
 
     #Add the nuget repository so we can download things like GitVersion
     if (!(Get-PackageSource "nuget.org" -erroraction silentlycontinue)) {
-        "Registering nuget.org as package source"
-        Register-PackageSource -provider NuGet -name nuget.org -location http://www.nuget.org/api/v2 -Trusted -verbose
+        write-verbose "Registering nuget.org as package source"
+        Register-PackageSource -provider NuGet -name nuget.org -location http://www.nuget.org/api/v2 -Trusted @PassThruParams  | out-string | out-verbose
     } else {
-        Set-PackageSource -name 'nuget.org' -Trusted
+        Set-PackageSource -name 'nuget.org' -Trusted @PassThruParams | out-string | write-verbose
     }
 
-    "Nuget.Org Package Source Info "
-    Get-PackageSource | format-table | out-string
-
-
-
+    write-verbose "Nuget.Org Package Source Info "
+    Get-PackageSource | format-table | out-string | write-verbose
     
-    Set-BuildEnvironment -force
-    $Timestamp = Get-date -uformat "%Y%m%d-%H%M%S"
-    $PSVersion = $PSVersionTable.PSVersion.Major
-    
-    if ($PSBoundParameters["Verbose"]) {
-        "Build Environment Prepared! Environment Information:"
-        "-------------------------------"
-        Get-BuildEnvironment
-    }
+
+
     
     #Move to the Project Directory if we aren't there already
     Set-Location $env:BHProjectPath
@@ -85,24 +94,23 @@ Enter-Build {
 
 task Clean {
     #Reset the BuildOutput Directory
-    if (test-path $ProjectBuildPath)  {remove-item $ProjectBuildPath -Recurse -Force}
-    New-Item -ItemType Directory $ProjectBuildPath -force | % FullName | out-string
+    if (test-path $ProjectBuildPath)  {remove-item $ProjectBuildPath -Recurse -Force @PassThruParams}
+    New-Item -ItemType Directory $ProjectBuildPath -force | % FullName | out-string | write-verbose
 }
 
 task Version {
     #This task determines what version number to assign this build
     $GitVersionConfig = "$env:BHProjectPath/GitVersion.yml"
 
-    "Nuget.Org Package Source Info for fetching Gitversion"
-    Get-PackageSource | fl | out-string
+    write-verbose "Nuget.Org Package Source Info for fetching Gitversion"
+    Get-PackageSource | fl | out-string | write-verbose
 
     #Fetch GitVersion
     $GitVersionCMDPackageName = "gitversion.commandline"
     if (!(Get-Package $GitVersionCMDPackageName -erroraction SilentlyContinue)) {
-        "Package Not Found, Searching..."
+        write-verbose "Package $GitVersionCMDPackageName Not Found Locally, Installing..."
         $VerbosePreference = "continue"
-#        Find-Package $GitVersionCMDPackageName -source "nuget.org" -verbose
-        Install-Package $GitVersionCMDPackageName -scope currentuser -source 'nuget.org' -verbose -force
+        Install-Package $GitVersionCMDPackageName -scope currentuser -source 'nuget.org' -force @PassThruParams
     }
     $GitVersionEXE = ((get-package $GitVersionCMDPackageName).source | split-path -Parent) + "\tools\GitVersion.exe"
 
@@ -131,14 +139,13 @@ task Version {
 
 #Copy all powershell module "artifacts" to Build Directory 
 task CopyFilesToBuildDir {
-    copy-item -Recurse "Public","Private","Traverse.ps*","License.TXT","README.md" $ProjectBuildPath -verbose
+    copy-item -Recurse "Public","Private","Traverse.ps*","License.TXT","README.md" $ProjectBuildPath @PassThruParams
 }
 
 #Update the Metadata of the Module with the latest Version
 task UpdateMetadata CopyFilesToBuildDir,Version, {
     # Load the module, read the exported functions, update the psd1 FunctionsToExport
-    $ProjectBuildPath
-    Set-ModuleFunctions $ProjectBuildPath -verbose
+    Set-ModuleFunctions $ProjectBuildPath @PassThruParams
     # Set the Module Version to the calculated Project Build version
     Update-Metadata -Path ($ProjectBuildPath + "\" + (split-path $env:BHPSModuleManifest -leaf)) -PropertyName ModuleVersion -Value $ProjectBuildVersion
 
