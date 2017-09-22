@@ -147,7 +147,9 @@ task Version {
         $GitVersionOutput
     }
 
-    #$GitVersionInfo | ConvertFrom-JSON
+    write-verboseheader "GitVersion Results"
+    $GitVersionInfo | format-table | out-string | write-verbose
+
     $SCRIPT:ProjectBuildVersion = [Version] $GitVersionInfo.MajorMinorPatch
     $SCRIPT:ProjectSemVersion = $($GitVersionInfo.fullsemver)
     write-build Green "Using Project Version: $ProjectBuildVersion"
@@ -252,4 +254,3 @@ task Test Pester
 
 #Default Task - Build, Test with Pester, Deploy
 task . Clean,Build,Test,Deploy
-
