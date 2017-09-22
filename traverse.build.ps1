@@ -6,7 +6,7 @@
 
 #This variable specifies what modules to bootstrap for the build
 #It is recommended to only bootstrap BuildHelpers and PSDepend, and use PSDepend for remaining prereqs
-$BuildHelperModules = "BuildHelpers", "PSDepend", "Pester", "powershell-yaml"
+$BuildHelperModules = "BuildHelpers", "PSDepend", "Pester", "powershell-yaml", "Microsoft.Powershell.Archive"
 
 #Initialize Build Environment
 Enter-Build {
@@ -38,7 +38,7 @@ Enter-Build {
     $PSVersion = $PSVersionTable.PSVersion.Major
     Set-BuildEnvironment -force
 
-
+    
 
     $PassThruParams = @{}
     #Some commands force verbose output. This helps keep it clean for master builds.
@@ -227,6 +227,16 @@ task Pester {
     "`n"
 }
 
+task PackageArtifacts Version,{
+    $ZipArchivePath = (join-path $env:BHBuildOutput "$env:BHProjectName-$ProjectSemVersion.zip")
+    write-build green "Writing Finished Module to $ZipArchivePath"
+    #Package the Powershell Module
+    Compress-Archive -Path $ProjectBuildPath -DestinationPath $ZipArchivePath -Force @PassThruParams
+}
+
+
+#Deploy Supertask
+task Deploy PackageArtifacts
 
 #Build SuperTask
 task Build Clean,CopyFilesToBuildDir,UpdateMetadata
@@ -235,5 +245,5 @@ task Build Clean,CopyFilesToBuildDir,UpdateMetadata
 task Test Pester
 
 #Default Task - Build, Test with Pester, Deploy
-task . Clean,Build,Test
+task . Clean,Build,Test,Deploy
 
