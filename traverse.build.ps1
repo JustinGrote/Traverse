@@ -4,97 +4,99 @@
 #Run by changing to the project root directory and run ./Invoke-Build.ps1
 #Uses a master-always-deploys strategy and semantic versioning - http://nvie.com/posts/a-successful-git-branching-model/
 
+#This variable specifies what modules to bootstrap for the build
+#It is recommended to only bootstrap BuildHelpers and PSDepend, and use PSDepend for remaining prereqs
+$BuildHelperModules = "BuildHelpers", "PSDepend", "Pester", "powershell-yaml"
+
 #Initialize Build Environment
 Enter-Build {
+    $lines = '----------------------------------------------------------------'
+    function Write-VerboseHeader ([String]$Message) {
+        #Simple function to add lines around a header
+        
+        write-verbose ""
+        write-verbose $lines
+        write-verbose $Message
+        write-verbose $lines
+    }
     
-    $BuildHelperModules = "BuildHelpers","PSDeploy","Pester","powershell-yaml"
-    #Fetch Build Helper Modules using Install-ModuleBootstrap script
+    #Fetch Build Helper Modules using Install-ModuleBootstrap script (works in PSv3/4)
     #The comma in ArgumentList a weird idiosyncracy to make sure a nested array is created to ensure Argumentlist 
     #doesn't unwrap the buildhelpermodules as individual arguments
-    Invoke-Command -ArgumentList @(,$BuildHelperModules) -ScriptBlock ([scriptblock]::Create((new-object net.webclient).DownloadString('http://tinyurl.com/PSIMB'))) 
+    write-verboseheader 'Bootstrapping Powershell Modules: $BuildHelperModules'
+    Invoke-Command -ArgumentList @(, $BuildHelperModules) -ScriptBlock ([scriptblock]::Create((new-object net.webclient).DownloadString('http://tinyurl.com/PSIMB'))) 
     
     #Initialize helpful build environment variables
     $Timestamp = Get-date -uformat "%Y%m%d-%H%M%S"
     $PSVersion = $PSVersionTable.PSVersion.Major
     Set-BuildEnvironment -force
 
-    write-verbose "Build Environment Prepared! Environment Information:"
-    write-verbose "-------------------------------"
-    write-verbose Get-BuildEnvironment | fl | out-string | write-verbose
-
-
-    $PassThruParams = @{}
-
-    write-verbose "Verbose Build Logging Enabled"
-    $PassThruParams.Verbose = $true
-
-    write-verbose "Setting up Build Environment..."
-    write-verbose "Environment Variables" 
-    write-verbose "---------------------"
-    get-childitem env: | out-string | write-verbose
-
-    write-verbose "Powershell Variables"
-    write-verbose "--------------------"
-    Get-Variable | select-object name,value,visibility | format-table -autosize | out-string | write-verbose   
-
-    write-verbose "Nuget Package Providers"
-    write-verbose "-----------------"
-    Get-PackageProvider -listavailable | write-verbose
-    
-
-    if ($APPVEYOR) {
-        write-verbose "Detected that we are running in Appveyor!"
-        write-verbose "AppVeyor Environment Information:"
-        write-verbose "-----------------"
-        get-item env:/Appveyor* | out-string | write-verbose
-        write-verbose "PS Module Path: $PSModulePath"
-    }
-
     #If we are in a CI (Appveyor/etc.), trust the powershell gallery for purposes of automatic module installation
     #We do this so that if running locally, you are still prompted to install software required by the build
     #If necessary. In a CI, we want it to happen automatically because it'll just be torn down anyways.
     if ($env:CI) {
-        "Detected a CI environment, disabling prompt confirmations"
-        $ConfirmPreference = "None"
+        write-verboseheader 'Detected a CI environment, disabling prompt confirmations'
+        $script:CI = $true
+        $ConfirmPreference = 'None'
     }
 
+    $PassThruParams = @{}
+    #Some commands force verbose output. This helps keep it clean for master builds.
+    
+    if ( ($VerbosePreference -ne 'SilentlyContinue') -or ($CI -and ($env:BHBranchName -ne 'master')) ) {
+        write-verboseheader "Verbose Build Logging Enabled"
+        $PassThruParams.Verbose = $true
+    }
+
+    write-verboseheader "Build Environment Prepared! Environment Information:"
+    write-verbose Get-BuildEnvironment | format-list | out-string | write-verbose
+
+    write-verboseheader "Current Environment Variables" 
+    get-childitem env: | out-string | write-verbose
+
+    write-verboseheader "Powershell Variables"
+    Get-Variable | select-object name, value, visibility | format-table -autosize | out-string | write-verbose
+
+    if ($APPVEYOR) {
+        write-verboseheader "Detected that we are running in Appveyor! Appveyor Environment Info:"
+        get-item env:/Appveyor* | out-string | write-verbose
+    }
 
     #Register Nuget
     if (!(get-packageprovider "Nuget" -ForceBootstrap -ErrorAction silentlycontinue)) {
         write-verbose "Nuget Provider Not found. Fetching..."
         Install-PackageProvider Nuget -forcebootstrap -scope currentuser @PassThruParams | out-string | write-verbose
-
-        write-verbose "Installed Nuget Provider Info"
-        write-verbose "-----------------------------"
+        write-verboseheader "Installed Nuget Provider Info"
         Get-PackageProvider Nuget @PassThruParams | format-list | out-string | write-verbose
     }
-
-
 
     #Add the nuget repository so we can download things like GitVersion
     if (!(Get-PackageSource "nuget.org" -erroraction silentlycontinue)) {
         write-verbose "Registering nuget.org as package source"
         Register-PackageSource -provider NuGet -name nuget.org -location http://www.nuget.org/api/v2 -Trusted @PassThruParams  | out-string | out-verbose
-    } else {
-        Set-PackageSource -name 'nuget.org' -Trusted @PassThruParams | out-string | write-verbose
+    }
+    else {
+        $nugetOrgPackageSource = Set-PackageSource -name 'nuget.org' -Trusted @PassThruParams
+        if ($PassThruParams.Verbose) {
+            write-verboseheader "Nuget.Org Package Source Info "
+            $nugetOrgPackageSource | format-table | out-string | write-verbose
+        }
+        
     }
 
-    write-verbose "Nuget.Org Package Source Info "
-    Get-PackageSource | format-table | out-string | write-verbose
-    
-
-
-    
     #Move to the Project Directory if we aren't there already
     Set-Location $env:BHProjectPath
-    
-    $Script:ProjectBuildPath = $env:BHBuildOutput + "\" + $env:BHProjectName
 
+    #Define the Project Build Path
+    $Script:ProjectBuildPath = $env:BHBuildOutput + "\" + $env:BHProjectName
+    Write-Build Green "Module Build Output Path: $ProjectBuildPath"
 }
 
 task Clean {
     #Reset the BuildOutput Directory
-    if (test-path $ProjectBuildPath)  {remove-item $ProjectBuildPath -Recurse -Force @PassThruParams}
+    if (test-path $env:BHBuildOutput) {
+        remove-item $env:BHBuildOutput -Recurse -Force @PassThruParams
+    }
     New-Item -ItemType Directory $ProjectBuildPath -force | % FullName | out-string | write-verbose
 }
 
@@ -102,14 +104,17 @@ task Version {
     #This task determines what version number to assign this build
     $GitVersionConfig = "$env:BHProjectPath/GitVersion.yml"
 
-    write-verbose "Nuget.Org Package Source Info for fetching Gitversion"
-    Get-PackageSource | fl | out-string | write-verbose
+
 
     #Fetch GitVersion
+    #TODO: Use Nuget.exe to fetch to make this v3/v4 compatible
     $GitVersionCMDPackageName = "gitversion.commandline"
     if (!(Get-Package $GitVersionCMDPackageName -erroraction SilentlyContinue)) {
         write-verbose "Package $GitVersionCMDPackageName Not Found Locally, Installing..."
-        $VerbosePreference = "continue"
+        write-verboseheader "Nuget.Org Package Source Info for fetching Gitversion"
+        Get-PackageSource | ft | out-string | write-verbose
+
+        #Fetch GitVersion
         Install-Package $GitVersionCMDPackageName -scope currentuser -source 'nuget.org' -force @PassThruParams
     }
     $GitVersionEXE = ((get-package $GitVersionCMDPackageName).source | split-path -Parent) + "\tools\GitVersion.exe"
@@ -117,6 +122,7 @@ task Version {
     #Does this project have a module manifest? Use that as the Gitversion starting point (will use this by default unless project is tagged higher)
     #Uses Powershell-YAML module to read/write the GitVersion.yaml config file
     if (Test-Path $env:BHPSModuleManifest) {
+        write-verbose "Fetching Version from Powershell Module Manifest (if present)"
         $ModuleManifestVersion = [Version](Get-Metadata $env:BHPSModuleManifest)
         if (Test-Path $env:BHProjectPath/GitVersion.yml) {
             $GitVersionConfigYAML = [ordered]@{} 
@@ -124,26 +130,35 @@ task Version {
             (Get-Content $GitVersionConfig | ConvertFrom-Yaml) | foreach-object {$GitVersionConfigYAML += $PSItem}
             $GitVersionConfigYAML.'next-version' = $ModuleManifestVersion.ToString()
             $GitVersionConfigYAML | ConvertTo-Yaml | Out-File $GitVersionConfig
-        } else {
-            @{"next-version"=$ModuleManifestVersion.toString()} | ConvertTo-Yaml | Out-File $GitVersionConfig
+        }
+        else {
+            @{"next-version" = $ModuleManifestVersion.toString()} | ConvertTo-Yaml | Out-File $GitVersionConfig
         }
     }
 
     #Calcuate the GitVersion
-    $GitVersionInfo = Invoke-Expression "$GitVersionEXE $env:BHProjectPath" | ConvertFrom-JSON
+    write-verbose "Executing GitVersion to determine version info"
+    $GitVersionOutput = & $GitVersionEXE $env:BHProjectPath
+
+    #Since GitVersion doesn't return error exit codes, we look for error text in the output in the output
+    if ($GitVersionOutput -match '^ERROR \[') {throw "An error occured when running GitVersion.exe $env:BHProjectPath"}
+    $GitVersionInfo = $GitVersionOutput | ConvertFrom-JSON -ErrorAction stop
+
+    #$GitVersionInfo | ConvertFrom-JSON
     $Script:ProjectBuildVersion = [Version] $GitVersionInfo.MajorMinorPatch
     $Script:ProjectSemVersion = $($GitVersionInfo.fullsemver)
-    write-host -ForegroundColor Green "Using Project Version: $ProjectBuildVersion"
-    write-host -ForegroundColor Green "Using Extended Project Version: $($GitVersionInfo.fullsemver)"
+    write-build Green "Using Project Version: $ProjectBuildVersion"
+    write-build Green "Using Project Version (Extended): $($GitVersionInfo.fullsemver)"
 }
 
 #Copy all powershell module "artifacts" to Build Directory 
 task CopyFilesToBuildDir {
-    copy-item -Recurse "Public","Private","Traverse.ps*","License.TXT","README.md" $ProjectBuildPath @PassThruParams
+    $FilesToCopy = "Public","Private","$($Env:BHProjectName)*",".\LICENSE.TXT","README.md"
+    copy-item -Recurse "Public", "Private", "Traverse.ps*", "License.TXT", "README.md" $ProjectBuildPath @PassThruParams
 }
 
 #Update the Metadata of the Module with the latest Version
-task UpdateMetadata CopyFilesToBuildDir,Version, {
+task UpdateMetadata CopyFilesToBuildDir, Version, {
     # Load the module, read the exported functions, update the psd1 FunctionsToExport
     Set-ModuleFunctions $ProjectBuildPath @PassThruParams
     # Set the Module Version to the calculated Project Build version
@@ -154,7 +169,8 @@ task UpdateMetadata CopyFilesToBuildDir,Version, {
     if ($BHBranchName -eq 'master') {
         #Get-NextNugetPackageVersion -Name (Get-ProjectName)
         #Update-Metadata -Path $env:BHPSModuleManifest -PropertyName ModuleVersion -Value (Get-NextNugetPackageVersion -Name (Get-ProjectName))
-    } else {
+    }
+    else {
 
     }
 
@@ -171,8 +187,7 @@ task Pester {
     $PesterResult = Invoke-Pester -OutputFormat "NUnitXml" -OutputFile $PesterResultFile -PassThru
 
     # In Appveyor?  Upload our test results!
-    If($APPVEYOR)
-    {
+    If ($APPVEYOR) {
         (New-Object 'System.Net.WebClient').UploadFile(
             "https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)",
             $PesterResultFile )
@@ -180,8 +195,7 @@ task Pester {
 
     # Failed tests?
     # Need to error out or it will proceed to the deployment. Danger!
-    if($TestResults.FailedCount -gt 0)
-    {
+    if ($TestResults.FailedCount -gt 0) {
         Write-Error "Failed '$($TestResults.FailedCount)' tests, build failed"
     }
     "`n"
@@ -189,11 +203,11 @@ task Pester {
 
 
 #Build SuperTask
-task Build Clean,CopyFilesToBuildDir,UpdateMetadata
+task Build Clean, CopyFilesToBuildDir, UpdateMetadata
 
 #Test SuperTask
 task Test Pester
 
 #Default Task - Build, Test with Pester, Deploy
-task . Clean,Build,Test
+task . Clean, Build, Test
 
