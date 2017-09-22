@@ -163,7 +163,7 @@ task CopyFilesToBuildDir {
 }
 
 #Update the Metadata of the Module with the latest Version
-task UpdateMetadata CopyFilesToBuildDir, Version, {
+task UpdateMetadata CopyFilesToBuildDir,Version,{
     # Load the module, read the exported functions, update the psd1 FunctionsToExport
     Set-ModuleFunctions $ProjectBuildPath @PassThruParams
     # Set the Module Version to the calculated Project Build version
@@ -213,11 +213,11 @@ task Pester {
 
 
 #Build SuperTask
-task Build Clean, CopyFilesToBuildDir, UpdateMetadata
+task Build Clean,CopyFilesToBuildDir,UpdateMetadata
 
 #Test SuperTask
 task Test Pester
 
 #Default Task - Build, Test with Pester, Deploy
-task . Clean, Build, Test
+task . Clean,Build,Test
 
