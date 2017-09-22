@@ -31,7 +31,7 @@ Enter-Build {
     #The comma in ArgumentList a weird idiosyncracy to make sure a nested array is created to ensure Argumentlist 
     #doesn't unwrap the buildhelpermodules as individual arguments
     write-verboseheader 'Bootstrapping Powershell Modules: $BuildHelperModules'
-    Invoke-Command -ArgumentList @(, $BuildHelperModules) -ScriptBlock ([scriptblock]::Create((new-object net.webclient).DownloadString('http://tinyurl.com/PSIMB'))) 
+    Invoke-Command -ArgumentList @(, $BuildHelperModules) -ScriptBlock ([scriptblock]::Create((new-object net.webclient).DownloadString('https://git.io/PSModBootstrap'))) 
     
     #Initialize helpful build environment variables
     $Timestamp = Get-date -uformat "%Y%m%d-%H%M%S"
@@ -246,13 +246,12 @@ task PackageArtifacts Version,{
     #Package the Powershell Module
     Compress-Archive -Path $ProjectBuildPath -DestinationPath $ZipArchivePath -Force @PassThruParams
 
-    #If we are in Appveyor, push to 
+    #If we are in Appveyor, push completed zip to Appveyor Artifact
     if ($env:APPVEYOR) {
         write-host -ForegroundColor Green "Detected Appveyor, pushing Powershell Module archive to Artifacts"
         Push-AppveyorArtifact $ZipArchivePath
     }
 }
-
 
 #Deploy Supertask
 task Deploy PackageArtifacts
