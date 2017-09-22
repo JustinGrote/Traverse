@@ -141,8 +141,13 @@ task Version {
     $GitVersionOutput = & $GitVersionEXE $env:BHProjectPath
 
     #Since GitVersion doesn't return error exit codes, we look for error text in the output in the output
-    if ($GitVersionOutput -match '^ERROR \[') {throw "An error occured when running GitVersion.exe $env:BHProjectPath"}
-    $GitVersionInfo = $GitVersionOutput | ConvertFrom-JSON -ErrorAction stop
+    if ($GitVersionOutput -match '^[ERROR|INFO] \[') {throw "An error occured when running GitVersion.exe $env:BHProjectPath"}
+    try {
+        $GitVersionInfo = $GitVersionOutput | ConvertFrom-JSON -ErrorAction stop
+    } catch {
+        throw "There was an error when running GitVersion.exe $env:BHProjectPath. The output of the command (if any) follows:"
+        $GitVersionOutput
+    }
 
     #$GitVersionInfo | ConvertFrom-JSON
     $SCRIPT:ProjectBuildVersion = [Version] $GitVersionInfo.MajorMinorPatch
