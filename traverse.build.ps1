@@ -19,7 +19,14 @@ Enter-Build {
         write-verbose $Message
         write-verbose $lines
     }
-    
+
+    #If we are in a continuous integration environment (Appveyor, etc.)
+    if ($ENV:CI) {
+        write-build Green 'Detected a CI environment, disabling prompt confirmations'
+        $SCRIPT:CI = $true
+        $ConfirmPreference = 'None'
+    }
+
     #Fetch Build Helper Modules using Install-ModuleBootstrap script (works in PSv3/4)
     #The comma in ArgumentList a weird idiosyncracy to make sure a nested array is created to ensure Argumentlist 
     #doesn't unwrap the buildhelpermodules as individual arguments
@@ -31,24 +38,17 @@ Enter-Build {
     $PSVersion = $PSVersionTable.PSVersion.Major
     Set-BuildEnvironment -force
 
-    #If we are in a CI (Appveyor/etc.), trust the powershell gallery for purposes of automatic module installation
-    #We do this so that if running locally, you are still prompted to install software required by the build
-    #If necessary. In a CI, we want it to happen automatically because it'll just be torn down anyways.
-    if ($env:CI) {
-        write-verboseheader 'Detected a CI environment, disabling prompt confirmations'
-        $script:CI = $true
-        $ConfirmPreference = 'None'
-    }
+
 
     $PassThruParams = @{}
     #Some commands force verbose output. This helps keep it clean for master builds.
     
     if ( ($VerbosePreference -ne 'SilentlyContinue') -or ($CI -and ($env:BHBranchName -ne 'master')) ) {
-        write-verboseheader "Verbose Build Logging Enabled"
+        write-build Green "Verbose Build Logging Enabled"
+        $SCRIPT:VerbosePreference = "Continue"
         $PassThruParams.Verbose = $true
     }
 
-    $VerbosePreference = "continue"
     write-verboseheader "Build Environment Prepared! Environment Information:"
     Get-BuildEnvironment | format-list | out-string | write-verbose
 
@@ -57,10 +57,8 @@ Enter-Build {
 
     write-verboseheader "Powershell Variables"
     Get-Variable | select-object name, value, visibility | format-table -autosize | out-string | write-verbose
-    
-    $VerbosePreference = "silentlycontinue"
 
-    if ($APPVEYOR) {
+    if ($ENV:APPVEYOR) {
         write-verboseheader "Detected that we are running in Appveyor! Appveyor Environment Info:"
         get-item env:/Appveyor* | out-string | write-verbose
     }
@@ -88,16 +86,17 @@ Enter-Build {
     }
 
     #Move to the Project Directory if we aren't there already
-    Set-Location $env:BHProjectPath
+    Set-Location $ENV:BHProjectPath
 
     #Define the Project Build Path
-    $Script:ProjectBuildPath = $env:BHBuildOutput + "\" + $env:BHProjectName
+    $SCRIPT:ProjectBuildPath = $ENV:BHBuildOutput + "\" + $ENV:BHProjectName
     Write-Build Green "Module Build Output Path: $ProjectBuildPath"
 }
 
 task Clean {
     #Reset the BuildOutput Directory
     if (test-path $env:BHBuildOutput) {
+        write-verbose "Removing and resetting $($ENV:BHBuildOutput)"
         remove-item $env:BHBuildOutput -Recurse -Force @PassThruParams
     }
     New-Item -ItemType Directory $ProjectBuildPath -force | % FullName | out-string | write-verbose
@@ -106,8 +105,6 @@ task Clean {
 task Version {
     #This task determines what version number to assign this build
     $GitVersionConfig = "$env:BHProjectPath/GitVersion.yml"
-
-
 
     #Fetch GitVersion
     #TODO: Use Nuget.exe to fetch to make this v3/v4 compatible
@@ -148,8 +145,8 @@ task Version {
     $GitVersionInfo = $GitVersionOutput | ConvertFrom-JSON -ErrorAction stop
 
     #$GitVersionInfo | ConvertFrom-JSON
-    $Script:ProjectBuildVersion = [Version] $GitVersionInfo.MajorMinorPatch
-    $Script:ProjectSemVersion = $($GitVersionInfo.fullsemver)
+    $SCRIPT:ProjectBuildVersion = [Version] $GitVersionInfo.MajorMinorPatch
+    $SCRIPT:ProjectSemVersion = $($GitVersionInfo.fullsemver)
     write-build Green "Using Project Version: $ProjectBuildVersion"
     write-build Green "Using Project Version (Extended): $($GitVersionInfo.fullsemver)"
 }
@@ -190,7 +187,7 @@ task Pester {
     $PesterResult = Invoke-Pester -OutputFormat "NUnitXml" -OutputFile $PesterResultFile -PassThru
 
     # In Appveyor?  Upload our test results!
-    If ($APPVEYOR) {
+    If ($env:APPVEYOR) {
         (New-Object 'System.Net.WebClient').UploadFile(
             "https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)",
             $PesterResultFile )
