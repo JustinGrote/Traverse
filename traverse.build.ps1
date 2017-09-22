@@ -171,7 +171,7 @@ task UpdateMetadata CopyFilesToBuildDir,Version,{
     Update-Metadata -Path ($ProjectBuildPath + "\" + (split-path $env:BHPSModuleManifest -leaf)) -PropertyName ModuleVersion -Value $ProjectBuildVersion
     
     # Are we in the master or develop/development branch? Bump the version based on the powershell gallery if so, otherwise add a build tag
-    if ($BHBranchName -match '^(master|develop\w*)$') {
+    if ($ENV:BHBranchName -match '^(master|develo\w*)$') {
         write-build Green "In Master/Develop branch, adding Tag Version $ProjectSemVersion to this build"
         if (-not (git tag -l $ProjectBuildVersion)) {
             git tag "$ProjectBuildVersion"
