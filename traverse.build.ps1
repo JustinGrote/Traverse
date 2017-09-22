@@ -38,8 +38,6 @@ Enter-Build {
     $PSVersion = $PSVersionTable.PSVersion.Major
     Set-BuildEnvironment -force
 
-    
-
     $PassThruParams = @{}
     
     #We suppress verbose output for master builds (because they should have already been built once cleanly)
