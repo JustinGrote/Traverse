@@ -48,14 +48,17 @@ Enter-Build {
         $PassThruParams.Verbose = $true
     }
 
+    $VerbosePreference = "continue"
     write-verboseheader "Build Environment Prepared! Environment Information:"
-    write-verbose Get-BuildEnvironment | format-list | out-string | write-verbose
+    Get-BuildEnvironment | format-list | out-string | write-verbose
 
     write-verboseheader "Current Environment Variables" 
     get-childitem env: | out-string | write-verbose
 
     write-verboseheader "Powershell Variables"
     Get-Variable | select-object name, value, visibility | format-table -autosize | out-string | write-verbose
+    
+    $VerbosePreference = "silentlycontinue"
 
     if ($APPVEYOR) {
         write-verboseheader "Detected that we are running in Appveyor! Appveyor Environment Info:"
