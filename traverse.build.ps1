@@ -149,13 +149,15 @@ task Version {
 
     write-verboseheader "GitVersion Results"
     $GitVersionInfo | format-list | out-string | write-verbose
-    $SCRIPT:ProjectBuildVersion = [Version] $GitVersionInfo.MajorMinorPatch
-
+    
     #If we are in the develop branch, add the prerelease number as revision
     #TODO: Make the develop and master regex customizable in a settings file
     if ($env:BHBranchName -match '^Develo\w*$') {
-        $SCRIPT:ProjectBuildVersion.Revision = $GitVersionInfo.PreReleaseNumber
+        $SCRIPT:ProjectBuildVersion = ($GitVersionInfo.MajorMinorPatch + "." + $GitVersionInfo.PreReleaseNumber)
+    } else {
+        $SCRIPT:ProjectBuildVersion = [Version] $GitVersionInfo.MajorMinorPatch
     }
+
 
     $SCRIPT:ProjectSemVersion = $($GitVersionInfo.fullsemver)
     write-build Green "Using Project Version: $ProjectBuildVersion"
