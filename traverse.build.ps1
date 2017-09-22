@@ -158,8 +158,8 @@ task Version {
 
 #Copy all powershell module "artifacts" to Build Directory 
 task CopyFilesToBuildDir {
-    $FilesToCopy = "Public","Private","$($Env:BHProjectName)*",".\LICENSE.TXT","README.md"
-    copy-item -Recurse "Public", "Private", "Traverse.ps*", "License.TXT", "README.md" $ProjectBuildPath @PassThruParams
+    $FilesToCopy = "Public","Private","$($Env:BHProjectName).psm1","$($Env:BHProjectName).psd1",".\LICENSE.TXT","README.md"
+    copy-item -Recurse -Path $FilesToCopy -Destination $ProjectBuildPath @PassThruParams 
 }
 
 #Update the Metadata of the Module with the latest Version
@@ -192,7 +192,10 @@ task Pester {
     $PesterResult = Invoke-Pester -OutputFormat "NUnitXml" -OutputFile $PesterResultFile -PassThru
 
     # In Appveyor?  Upload our test results!
-    If ($env:APPVEYOR) {
+    If ($ENV:APPVEYOR) {
+        $UploadURL = "https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)"
+        write-verbose "Detected we are running in AppVeyor"
+        write-verbose "Uploading Pester Results to $UploadURL"
         (New-Object 'System.Net.WebClient').UploadFile(
             "https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)",
             $PesterResultFile )
