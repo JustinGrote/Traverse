@@ -148,7 +148,7 @@ task Version {
     }
 
     write-verboseheader "GitVersion Results"
-    $GitVersionInfo | format-table | out-string | write-verbose
+    $GitVersionInfo | format-list | out-string | write-verbose
 
     $SCRIPT:ProjectBuildVersion = [Version] $GitVersionInfo.MajorMinorPatch
     $SCRIPT:ProjectSemVersion = $($GitVersionInfo.fullsemver)
