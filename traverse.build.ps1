@@ -41,8 +41,8 @@ Enter-Build {
     
 
     $PassThruParams = @{}
-    #Some commands force verbose output. This helps keep it clean for master builds.
     
+    #We suppress verbose output for master builds (because they should have already been built once cleanly)
     if ( ($VerbosePreference -ne 'SilentlyContinue') -or ($CI -and ($env:BHBranchName -ne 'master')) ) {
         write-build Green "Verbose Build Logging Enabled"
         $SCRIPT:VerbosePreference = "Continue"
@@ -178,9 +178,11 @@ task UpdateMetadata CopyFilesToBuildDir,Version,{
         } else {
             write-warning "Tag $ProjectBuildVersion already exists. This is normal if you are running multiple builds on the same commit, otherwise this should not happen"
         }
+        <# TODO: Add some intelligent logic to tagging releases
         if (-not $CI) {
             git push origin $ProjectBuildVersion | write-verbose
         }
+        #>
         <# TODO: Add a Powershell Gallery Check on the module
         if (Get-NextNugetPackageVersion -Name (Get-ProjectName) -ErrorAction SilentlyContinue) {
             Update-Metadata -Path $env:BHPSModuleManifest -PropertyName ModuleVersion -Value (Get-NextNugetPackageVersion -Name (Get-ProjectName))
@@ -232,6 +234,12 @@ task PackageArtifacts Version,{
     write-build green "Writing Finished Module to $ZipArchivePath"
     #Package the Powershell Module
     Compress-Archive -Path $ProjectBuildPath -DestinationPath $ZipArchivePath -Force @PassThruParams
+
+    #If we are in Appveyor, push to 
+    if ($env:APPVEYOR) {
+        write-host -ForegroundColor Green "Detected Appveyor, pushing Powershell Module archive to Artifacts"
+        Push-AppveyorArtifact $ZipArchivePath
+    }
 }
 
 
