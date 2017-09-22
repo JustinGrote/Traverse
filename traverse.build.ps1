@@ -168,12 +168,12 @@ task UpdateMetadata CopyFilesToBuildDir,Version,{
     Set-ModuleFunctions $ProjectBuildPath @PassThruParams
     # Set the Module Version to the calculated Project Build version
     Update-Metadata -Path ($ProjectBuildPath + "\" + (split-path $env:BHPSModuleManifest -leaf)) -PropertyName ModuleVersion -Value $ProjectBuildVersion
-
     
     # Are we in the master branch? Bump the version based on the powershell gallery if so, otherwise add a build tag
     if ($BHBranchName -eq 'master') {
-        #Get-NextNugetPackageVersion -Name (Get-ProjectName)
-        #Update-Metadata -Path $env:BHPSModuleManifest -PropertyName ModuleVersion -Value (Get-NextNugetPackageVersion -Name (Get-ProjectName))
+        if (Get-NextNugetPackageVersion -Name (Get-ProjectName) -ErrorAction SilentlyContinue) {
+            Update-Metadata -Path $env:BHPSModuleManifest -PropertyName ModuleVersion -Value (Get-NextNugetPackageVersion -Name (Get-ProjectName))
+        }
     }
     else {
         write-build Green "Adding Tag Version $ProjectSemVersion to this build"
@@ -184,8 +184,7 @@ task UpdateMetadata CopyFilesToBuildDir,Version,{
     # Add Release Notes from current version
     # TODO: Generate Release Notes from Github
     #Update-Metadata -Path $env:BHPSModuleManifest -PropertyName ReleaseNotes -Value ("$($env:APPVEYOR_REPO_COMMIT_MESSAGE): $($env:APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED)")
-}  
-#>
+}
 
 #Pester Testing
 task Pester {
