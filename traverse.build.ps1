@@ -252,7 +252,7 @@ task Pester {
 }
 
 task PackageArtifacts Version,{
-    $ZipArchivePath = (join-path $env:BHBuildOutput "$env:BHProjectName-$ProjectSemVersion.zip")
+    $ZipArchivePath = (join-path $env:BHBuildOutput "$env:BHProjectName-$ProjectVersion.zip")
     write-build green "Writing Finished Module to $ZipArchivePath"
     #Package the Powershell Module
     Compress-Archive -Path $ProjectBuildPath -DestinationPath $ZipArchivePath -Force @PassThruParams
