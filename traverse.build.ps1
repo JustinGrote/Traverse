@@ -43,9 +43,9 @@ Enter-Build {
     #If the branch name is master-test, run the build like we are in "master"
     if ($env:BHBranchName -eq 'master-test') {
         write-build Magenta "Detected master-test branch, running as if we were master"
-        $BranchName = "master"
+        $SCRIPT:BranchName = "master"
     } else {
-        $BranchName = $env:BHBranchName
+        $SCRIPT:BranchName = $env:BHBranchName
     }
 
     #We suppress verbose output for master builds (because they should have already been built once cleanly)
@@ -190,6 +190,7 @@ task UpdateMetadata CopyFilesToBuildDir,Version,{
     Update-Metadata -Path ($ProjectBuildPath + "\" + (split-path $env:BHPSModuleManifest -leaf)) -PropertyName ModuleVersion -Value $ProjectBuildVersion
     
     # Are we in the master or develop/development branch? Bump the version based on the powershell gallery if so, otherwise add a build tag
+    write-build Yellow "BranchName: $BranchName"
     if ($BranchName -match '^(master|dev(elop)?(ment)?)$') {
         write-build Green "In Master/Develop branch, adding Tag Version $ProjectSemVersion to this build"
         if (-not (git tag -l $ProjectBuildVersion)) {
