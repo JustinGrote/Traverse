@@ -40,8 +40,16 @@ Enter-Build {
 
     $PassThruParams = @{}
     
+    #If the branch name is master-test, run the build like we are in "master"
+    if ($env:BHBranchName -eq 'master-test') {
+        write-build Magenta "Detected master-test branch, running as if we were master"
+        $BranchName = "master"
+    } else {
+        $BranchName = $env:BHBranchName
+    }
+
     #We suppress verbose output for master builds (because they should have already been built once cleanly)
-    if ( ($VerbosePreference -ne 'SilentlyContinue') -or ($CI -and ($env:BHBranchName -ne 'master')) ) {
+    if ( ($VerbosePreference -ne 'SilentlyContinue') -or ($CI -and ($BranchName -ne 'master')) ) {
         write-build Green "Verbose Build Logging Enabled"
         $SCRIPT:VerbosePreference = "Continue"
         $PassThruParams.Verbose = $true
@@ -155,7 +163,7 @@ task Version {
     
     #If we are in the develop branch, add the prerelease number as revision
     #TODO: Make the develop and master regex customizable in a settings file
-    if ($env:BHBranchName -match '^dev(elop)?(ment)?$') {
+    if ($BranchName -match '^dev(elop)?(ment)?$') {
         $SCRIPT:ProjectBuildVersion = ($GitVersionInfo.MajorMinorPatch + "." + $GitVersionInfo.PreReleaseNumber)
     } else {
         $SCRIPT:ProjectBuildVersion = [Version] $GitVersionInfo.MajorMinorPatch
@@ -182,7 +190,7 @@ task UpdateMetadata CopyFilesToBuildDir,Version,{
     Update-Metadata -Path ($ProjectBuildPath + "\" + (split-path $env:BHPSModuleManifest -leaf)) -PropertyName ModuleVersion -Value $ProjectBuildVersion
     
     # Are we in the master or develop/development branch? Bump the version based on the powershell gallery if so, otherwise add a build tag
-    if ($ENV:BHBranchName -match '^(master|dev(elop)?(ment)?)$') {
+    if ($BranchName -match '^(master|dev(elop)?(ment)?)$') {
         write-build Green "In Master/Develop branch, adding Tag Version $ProjectSemVersion to this build"
         if (-not (git tag -l $ProjectBuildVersion)) {
             git tag "$ProjectBuildVersion"
