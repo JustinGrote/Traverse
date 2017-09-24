@@ -192,7 +192,7 @@ task UpdateMetadata CopyFilesToBuildDir,Version,{
     # Are we in the master or develop/development branch? Bump the version based on the powershell gallery if so, otherwise add a build tag
     write-build Yellow "BranchName: $BranchName"
     if ($BranchName -match '^(master|dev(elop)?(ment)?)$') {
-        write-build Green "In Master/Develop branch, adding Tag Version $ProjectSemVersion to this build"
+        write-build Green "In Master/Develop branch, adding Tag Version $ProjectBuildVersion to this build"
         if (-not (git tag -l $ProjectBuildVersion)) {
             git tag "$ProjectBuildVersion"
         } else {
