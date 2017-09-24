@@ -19,7 +19,7 @@ skip_commits:
 #We run it at the test step so that we can upload test results back to the system. 
 build: false
 test_script:
-  - ps: .\Invoke-Build.ps1 -verbose
+  - ps: .\Invoke-Build.ps1
 
 deploy: false
 
