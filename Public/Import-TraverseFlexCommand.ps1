@@ -73,7 +73,8 @@ Documentation for all commands can be found at the Traverse Developers Guide, bu
 
         #Add in the Comma Characters for all but the last command
         $PShellParamsFinal = ""
-        $PShellParams | select -skiplast 1 | foreach {
+        #The skip last syntax is for PS4 and below compatability. PS5 would use -skiplast
+        $PShellParams | select -skip 1 -last 99999999 | foreach {
             $PShellParamsFinal += $PSItem -replace '\r\n$',",`r`n"
         }
         $PShellParamsFinal += $PShellParams | select -last 1
