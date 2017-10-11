@@ -130,7 +130,7 @@ function $PShellVerb-$PShellNoun {
     $cmdList += @"
 export-modulemember -Function *
 "@
-    $flexModulePath =  $env:temp + "\$prefix-" + (New-GUID).toString() + "\$prefix.psm1"
+    $flexModulePath =  $env:temp + "\$prefix-" + (([GUID]::newguid()).guid).toString() + "\$prefix.psm1"
     New-Item -type Directory (Split-Path -Parent $flexModulePath) | out-null
     remove-item  $flexModulePath -ErrorAction SilentlyContinue
     $cmdList > $flexModulePath

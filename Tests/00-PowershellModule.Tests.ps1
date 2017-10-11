@@ -9,7 +9,8 @@ Describe "$env:BHProjectName Module Build" {
         It "Has a valid Module Manifest" {
             #Copy the Module Manifest to a temp file in order to test to fix a bug where 
             #Test-ModuleManifest caches the first result, thus not catching changes
-            $TempModuleManifestPath = join-path $env:Temp ($env:BHProjectName + "-" + (New-GUID).GUID + ".psd1")
+            #Not using New-GUID because not available in Azure Functions
+            $TempModuleManifestPath = join-path $env:Temp ($env:BHProjectName + "-" + ([GUID]::newguid()).guid + ".psd1")
             copy-item $ModuleManifestPath $TempModuleManifestPath
             $Script:Manifest = Test-ModuleManifest $TempModuleManifestPath
             remove-item $TempModuleManifestPath
